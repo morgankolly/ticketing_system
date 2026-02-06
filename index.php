@@ -4,12 +4,17 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-require_once __DIR__ . '/admin/main/auth-middleware.php';
+
 require_once __DIR__ . '/admin/config/connection.php';
-require_once __DIR__ . '/admin/controllers/TicketController.php';
+require_once __DIR__ . '/admin/models/CategoryModel.php';
+$CategoryModel = new CategoryModel($pdo);
 
-
+// Fetch categories
+$categories = $CategoryModel->fetchAllCategories();
 ?>
+
+
+
 <!DOCTYPE html>
 
 <head>
@@ -44,57 +49,64 @@ require_once __DIR__ . '/admin/controllers/TicketController.php';
 <div class="container mt-5">
     <h2>Submit a Support Ticket</h2>
 
-    <form method="POST" action="">
-        <!-- Title -->
-        <div class="mb-3">
-            <label class="form-label">Title</label>
-            <input type="text" name="title" class="form-control" required>
-        </div>
+    <form method="POST" enctype="multipart/form-data">
+    <div class="mb-3">
+        <label class="form-label">Title</label>
+        <input type="text" name="title" class="form-control" placeholder="Enter ticket title" required>
+    </div>
 
-        <!-- Description -->
-        <div class="mb-3">
-            <label class="form-label">Description</label>
-            <textarea name="description" class="form-control" rows="5" required></textarea>
-        </div>
+    <div class="mb-3">
+        <label class="form-label">Description</label>
+        <textarea name="description" class="form-control" placeholder="Enter ticket description" required></textarea>
+    </div>
 
-        <!-- Email -->
-        <div class="mb-3">
-            <label class="form-label">Email</label>
-            <input type="email" name="email" class="form-control" required>
-        </div>
+    <div class="mb-3">
+        <label class="form-label">Email</label>
+        <input type="email" name="email" class="form-control" placeholder="Enter your email" required>
+    </div>
 
-        <!-- Status -->
-      
+    <div class="mb-3">
+        <label class="form-label">Category</label>
+        <select name="category_id" class="form-select" required>
+            <option value="" disabled selected>Select a category</option>
+            <?php foreach ($categories as $category): ?>
+                <option value="<?= $category['category_id'] ?>">
+                    <?= htmlspecialchars($category['category_name']) ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+    </div>
 
-      
+    <div class="mb-3">
+        <label class="form-label">Priority</label>
+        <select name="priority" class="form-select" required>
+            <option value="low">Low</option>
+            <option value="medium" selected>Medium</option>
+            <option value="high">High</option>
+        </select>
+    </div>
 
-        <!-- Category ID -->
-      <div class="mb-3">
-    <label class="form-label">Category</label>
-    <select name="category_id" class="form-select" required>
-        <option value="" disabled selected>Select a category</option>
-        <?php foreach ($categories as $category): ?>
-            <option value="<?= $category['category_id'] ?>">
-                <?= htmlspecialchars($category['category_name']) ?>
-            </option>
-        <?php endforeach; ?>
-    </select>
-</div>
+    <div class="mb-3">
+        <label class="form-label">Attachment (optional)</label>
+        <input type="file" name="attachment" class="form-control" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.txt">
+    </div>
 
-        <!-- Contact -->
-        <div class="mb-3">
-            <label class="form-label">Contact</label>
-            <input type="text" name="contact" class="form-control">
-        </div>
+    <div class="mb-3">
+        <label class="form-label">Contact (optional)</label>
+        <input type="text" name="contact" class="form-control" placeholder="Phone or contact info">
+    </div>
 
-        <!-- Support Email -->
-        <div class="mb-3">
-            <label class="form-label">Support Email</label>
-            <input type="email" name="support_email" class="form-control">
-        </div>
+    <div class="mb-3">
+        <label class="form-label">Support Email (optional)</label>
+        <input type="email" name="support_email" class="form-control" placeholder="Support email if any">
+    </div>
 
+    <div class="d-grid gap-2 mt-3">
         <button type="submit" name="submitTicket" class="btn btn-primary">Submit Ticket</button>
-    </form>
+    </div>
+</form>
+
+
 </div>
 </body>
 </html>

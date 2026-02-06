@@ -1,6 +1,8 @@
 <?php
 
-
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['getAllUsers'])) {
     $username = $_POST['user_name'] ?? '';
     $email = $_POST['email'] ?? '';
@@ -8,6 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['getAllUsers'])) {
     $status = $_POST['Status'] ?? '';
 
 }
+$users = $pdo->query("SELECT user_id, user_name FROM users WHERE role_id = 'agent'")->fetchAll(PDO::FETCH_ASSOC);
 $Users = $UserModel->getAllUsers();
 $totalUsers= count($UserModel->getAllUsers());
 if (isset($_POST['createUser'])) {
@@ -113,25 +116,23 @@ if (isset($_POST['updateUser'])) {
     }
 
     $profile = $oldUser['profile'];
+   $uploadDir = '/Applications/XAMPP/xamppfiles/htdocs/Ticketing-system/uploads/profile/';
 
-
-    $uploadDir = dirname(__DIR__, 3) . '/uploads/profile/';
-
-    if (!is_dir($uploadDir)) {
+if (!is_dir($uploadDir)) {
     if (!mkdir($uploadDir, 0777, true)) {
         die('❌ Failed to create upload directory');
     }
 }
 
-
-
-
-    if (
-        isset($_FILES['profile'])
-    ) {
-
+    if (!empty($_FILES['profile']['name'])) {
         $filename = time() . '_' . basename($_FILES['profile']['name']);
         $destination = $uploadDir . $filename;
+        $allowed = ['jpg', 'jpeg', 'png', 'webp'];
+$ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+
+        if (!in_array($ext, $allowed)) {
+            die('Invalid image type');
+        }
 
         if (!move_uploaded_file($_FILES['profile']['tmp_name'], $destination)) {
             die('Failed to move uploaded file. Check folder permissions.');
@@ -148,14 +149,13 @@ if (isset($_POST['updateUser'])) {
     );
 
     if ($updated) {
-        header("Location: usersManager.php?updated=1");
+        header("Location: userManager.php?updated=1");
         exit;
     } else {
         echo "Failed to update user.";
     }
+
+
+
+
 }
-
-
-
-
-

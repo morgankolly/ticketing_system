@@ -1,12 +1,18 @@
 <?php
+
 session_start();
 
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
+
 use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\SMTP;
 use PHPMailer\PHPMailer\Exception;
+
+require_once __DIR__ . '/PHPMailer/src/Exception.php';
+require_once __DIR__ . '/PHPMailer/src/PHPMailer.php';
+require_once __DIR__ . '/PHPMailer/src/SMTP.php';
+
 
 
 
@@ -36,7 +42,7 @@ require_once __DIR__ . '/../config/connection.php';
             $mail->Port = 465;                                    //TCP port to connect to; use 587 if you have set `SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS`
 
             //Recipients
-            $mail->setFrom('morgankolly5@gmail.com', 'Content Management System');
+            $mail->setFrom('morgankolly5@gmail.com', 'Morgan Kolly Ticketing System');
             $mail->addAddress($email,  $name);     //Add a recipient
 
             //Content
@@ -66,7 +72,7 @@ require_once __DIR__ . '/../config/connection.php';
             $mail->Port = 465;                                    //TCP port to connect to; use 587 if you have set `SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS`
 
             //Recipients
-            $mail->setFrom('morgankolly5@gmail.com', 'Content Management System');
+            $mail->setFrom('morgankolly5@gmail.com', 'Morgan Kolly Ticketing System');
             $mail->addAddress($email,  );     //Add a recipient
 
             //Content

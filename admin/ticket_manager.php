@@ -3,8 +3,8 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
-require_once __DIR__ . '/main/auth-middleware.php';
-include_once __DIR__ . '/compents/header.php';
+
+include_once __DIR__ . '/components/header.php';
 ?>
 
 <!DOCTYPE html>
@@ -17,87 +17,91 @@ include_once __DIR__ . '/compents/header.php';
 </head>
 
 <body>
-    
-<div class="container mt-5">
-    <h1>Ticket Manager</h1>
 
-    <?php if (isset($message)): ?>
-        <div class="alert alert-success"><?= htmlspecialchars($message) ?></div>
-    <?php endif; ?>
+    <div class="container mt-5">
+        <h1>Ticket Manager</h1>
 
-    <!-- Filter Form -->
-    <form method="GET" class="row g-3 mb-4">
-        <div class="col-md-3">
-            <label class="form-label">Priority</label>
-            <select name="priority" class="form-select">
-                <option value="">All</option>
-                <?php foreach ($ticketPriorities as $p): ?>
-                    <option value="<?= htmlspecialchars($p) ?>" <?= $priority === $p ? 'selected' : '' ?>>
-                        <?= ucfirst(htmlspecialchars($p)) ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-        <div class="col-md-3">
-            <label class="form-label">Start Date</label>
-            <input type="date" name="start_date" class="form-control" value="<?= htmlspecialchars($startDate) ?>">
-        </div>
-        <div class="col-md-3">
-            <label class="form-label">End Date</label>
-            <input type="date" name="end_date" class="form-control" value="<?= htmlspecialchars($endDate) ?>">
-        </div>
-        <div class="col-md-3 d-flex align-items-end">
-            <button type="submit" class="btn btn-primary w-100">Filter</button>
-        </div>
-    </form>
+        <?php if (isset($message)): ?>
+            <div class="alert alert-success"><?= htmlspecialchars($message) ?></div>
+        <?php endif; ?>
 
-    <!-- Tickets Table -->
-    <?php if (empty($newTickets)): ?>
-        <p>No tickets found.</p>
-    <?php else: ?>
-        <table class="table table-bordered">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Title</th>
-                    <th>Description</th>
-                    <th>Priority</th>
-                    <th>Status</th>
-                    <th>Category</th>
-                    <th>Created At</th>
-                    <th>Assign to Agent</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($newTickets as $ticket): ?>
+        <!-- Filter Form -->
+        <form method="GET" class="row g-3 mb-4">
+            <div class="col-md-3">
+                <label class="form-label">Priority</label>
+                <select name="priority" class="form-select">
+                    <option value="">All</option>
+                    <?php foreach ($ticketPriorities as $p): ?>
+                        <option value="<?= htmlspecialchars($p) ?>" <?= $priority === $p ? 'selected' : '' ?>>
+                            <?= ucfirst(htmlspecialchars($p)) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Start Date</label>
+                <input type="date" name="start_date" class="form-control" value="<?= htmlspecialchars($startDate) ?>">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">End Date</label>
+                <input type="date" name="end_date" class="form-control" value="<?= htmlspecialchars($endDate) ?>">
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">Filter</button>
+            </div>
+        </form>
+
+        <!-- Tickets Table -->
+        <?php if (empty($newTickets)): ?>
+            <p>No tickets found.</p>
+        <?php else: ?>
+            <table class="table table-bordered">
+                <thead>
                     <tr>
-                        <td><?= $ticket['ticket_id'] ?></td>
-                        <td><?= htmlspecialchars($ticket['title']) ?></td>
-                        <td><?= htmlspecialchars($ticket['description']) ?></td>
-                        <td><?= htmlspecialchars($ticket['priority']) ?></td>
-                        <td><?= htmlspecialchars($ticket['status']) ?></td>
-                        <td><?= htmlspecialchars($ticket['category_name']) ?></td>
-                        <td><?= $ticket['created_at'] ?></td>
-                        <td>
-                            <form method="POST" class="d-flex gap-2">
-                                <input type="hidden" name="ticket_id" value="<?= $ticket['ticket_id'] ?>">
-                                <select name="agent_id" class="form-select" required>
-                                    <option value="">Select Agent</option>
-                                    <?php foreach ($agents as $agent): ?>
-                                        <option value="<?= $agent['user_id'] ?>" <?= $ticket['agent_id'] == $agent['user_id'] ? 'selected' : '' ?>>
-                                            <?= htmlspecialchars($agent['user_name']) ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                                <button type="submit" name="assign_ticket" class="btn btn-primary">Assign</button>
-                            </form>
-                        </td>
+                        <th>ID</th>
+                        <th>Title</th>
+                        <th>Description</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                        <th>Category</th>
+                        <th>Created At</th>
+                        <th>Assign to Agent</th>
                     </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-    <?php endif; ?>
-</div>
+                </thead>
+                <tbody>
+                    <?php foreach ($newTickets as $ticket): ?>
+                        <tr>
+                            <td><?= $ticket['ticket_id'] ?></td>
+                            <td><?= htmlspecialchars($ticket['title']) ?></td>
+                            <td><?= htmlspecialchars($ticket['description']) ?></td>
+                            <td><?= htmlspecialchars($ticket['priority']) ?></td>
+                            <td><?= htmlspecialchars($ticket['status']) ?></td>
+                            <td><?= htmlspecialchars($ticket['category_name']) ?></td>
+                            <td><?= $ticket['created_at'] ?></td>
+                            <td>
+                              <form method="POST" class="d-flex gap-2">
+    <input type="hidden" name="ticket_id" value="<?= $ticket['ticket_id'] ?>">
+
+    <select name="user_id" class="form-select" required>
+        <option value="">Select Agent</option>
+        <?php foreach ($users as $user): ?>
+            <option value="<?= $user['user_id'] ?>" 
+                <?= isset($ticket['user_id']) && $ticket['user_id'] == $user['user_id'] ? 'selected' : '' ?>>
+                <?= htmlspecialchars($user['user_name']) ?>
+            </option>
+        <?php endforeach; ?>
+    </select>
+
+    <button type="submit" name="assign_ticket" class="btn btn-primary">Assign</button>
+</form>
+
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        <?php endif; ?>
+    </div>
 </body>
 
 </html>
