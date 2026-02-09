@@ -4,6 +4,9 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> c8ab191 (added agent dashboard and agent ticketpage)
 require_once __DIR__ . '/main/auth-middleware.php';
 include_once __DIR__ . '/compents/header.php';
 $usersStmt = $pdo->query("
@@ -16,10 +19,13 @@ $agentRoleId = 2; // assuming role_id 2 = agent
 $usersStmt = $pdo->prepare("SELECT user_id, user_name FROM users WHERE role_id = ?");
 $usersStmt->execute([$agentRoleId]);
 $agents = $usersStmt->fetchAll();
+<<<<<<< HEAD
 =======
 
 include_once __DIR__ . '/components/header.php';
 >>>>>>> 6954315 (worked on user verification and ticket submittion by the user)
+=======
+>>>>>>> c8ab191 (added agent dashboard and agent ticketpage)
 ?>
 
 <!DOCTYPE html>
@@ -133,6 +139,9 @@ include_once __DIR__ . '/components/header.php';
 
     <select name="user_id" class="form-select" required>
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> c8ab191 (added agent dashboard and agent ticketpage)
     <option value="">Select Agent</option>
     <?php foreach ($agents as $agent): ?>
         <option value="<?= $agent['user_id'] ?>" 
@@ -141,6 +150,7 @@ include_once __DIR__ . '/components/header.php';
         </option>
     <?php endforeach; ?>
 </select>
+<<<<<<< HEAD
 =======
         <option value="">Select Agent</option>
         <?php foreach ($users as $user): ?>
@@ -151,6 +161,8 @@ include_once __DIR__ . '/components/header.php';
         <?php endforeach; ?>
     </select>
 >>>>>>> 6954315 (worked on user verification and ticket submittion by the user)
+=======
+>>>>>>> c8ab191 (added agent dashboard and agent ticketpage)
 
     <button type="submit" name="assign_ticket" class="btn btn-primary">Assign</button>
 </form>

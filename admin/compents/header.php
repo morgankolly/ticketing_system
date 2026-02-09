@@ -1,21 +1,34 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> c8ab191 (added agent dashboard and agent ticketpage)
 <?php
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
+<<<<<<< HEAD
 =======
 to be more specific this is my header<?php
 
 >>>>>>> 6954315 (worked on user verification and ticket submittion by the user)
+=======
+>>>>>>> c8ab191 (added agent dashboard and agent ticketpage)
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
-if (!isset($_SESSION['user_id'])) {
-    header("Location: index.php");
-    exit;
-}
-$user_name = $_SESSION['username'] ?? 'Guest';
-$user_role = $_SESSION['role'] ?? null;
+
+<<<<<<< HEAD
+
+require_once __DIR__ . '/../config/connection.php';
+require_once __DIR__ . '/../models/UserModel.php';
+$userModel = new UserModel($pdo);
+
+require_once __DIR__ . '/../controllers/UserController.php';
+
+
+?>
+=======
+>>>>>>> c8ab191 (added agent dashboard and agent ticketpage)
 
 
 require_once __DIR__ . '/../config/connection.php';
@@ -26,7 +39,6 @@ require_once __DIR__ . '/../controllers/UserController.php';
 
 
 ?>
-
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -48,6 +60,7 @@ require_once __DIR__ . '/../controllers/UserController.php';
 </head>
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 =======
     <header>
@@ -66,6 +79,9 @@ require_once __DIR__ . '/../controllers/UserController.php';
     </nav>
 </header>
 >>>>>>> 6954315 (worked on user verification and ticket submittion by the user)
+=======
+
+>>>>>>> c8ab191 (added agent dashboard and agent ticketpage)
 <div class="wrapper">
     <nav id="sidebar" class="sidebar js-sidebar">
         <div class="sidebar-content js-simplebar">
@@ -172,9 +188,15 @@ require_once __DIR__ . '/../controllers/UserController.php';
             </div>
 
 <<<<<<< HEAD
+<<<<<<< HEAD
         </nav>
 
         
 =======
         </nav>
 >>>>>>> 6954315 (worked on user verification and ticket submittion by the user)
+=======
+        </nav>
+
+        
+>>>>>>> c8ab191 (added agent dashboard and agent ticketpage)

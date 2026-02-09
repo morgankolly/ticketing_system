@@ -1,18 +1,26 @@
 <?php
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 =======
 >>>>>>> 6954315 (worked on user verification and ticket submittion by the user)
+=======
+
+>>>>>>> c8ab191 (added agent dashboard and agent ticketpage)
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> c8ab191 (added agent dashboard and agent ticketpage)
 include_once __DIR__ . '/compents/header.php'; 
 include_once __DIR__ . '/helpers/functions.php';
 include_once __DIR__ . '/config/connection.php';
 $stmt = $pdo->query("SELECT * FROM notifications ORDER BY created_at DESC");
 $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
+<<<<<<< HEAD
 
 $notif_stmt = $pdo->query("SELECT * FROM notifications ORDER BY created_at DESC");
 $notifications = $notif_stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -22,20 +30,20 @@ $new_ticket_count = count($new_tickets);
 $pdo->query("UPDATE notifications SET is_read = 1 WHERE is_read = 0");
 =======
 include_once __DIR__ . '/components/header.php';
+=======
+>>>>>>> c8ab191 (added agent dashboard and agent ticketpage)
 
-// --- Fetch notifications ---
 $notif_stmt = $pdo->query("SELECT * FROM notifications ORDER BY created_at DESC");
 $notifications = $notif_stmt->fetchAll(PDO::FETCH_ASSOC);
-
-// --- Fetch new tickets ---
 $ticket_stmt = $pdo->query("SELECT * FROM tickets WHERE is_read = 0 ORDER BY created_at DESC");
 $new_tickets = $ticket_stmt->fetchAll(PDO::FETCH_ASSOC);
 $new_ticket_count = count($new_tickets);
-
-// --- Optionally mark all notifications as read when page is loaded ---
 $pdo->query("UPDATE notifications SET is_read = 1 WHERE is_read = 0");
+<<<<<<< HEAD
 // Optionally mark tickets as read when viewed
 >>>>>>> 6954315 (worked on user verification and ticket submittion by the user)
+=======
+>>>>>>> c8ab191 (added agent dashboard and agent ticketpage)
 $pdo->query("UPDATE tickets SET is_read = 1 WHERE is_read = 0");
 ?>
 <!DOCTYPE html>

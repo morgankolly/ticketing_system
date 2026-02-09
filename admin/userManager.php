@@ -4,6 +4,9 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> c8ab191 (added agent dashboard and agent ticketpage)
 include_once __DIR__ . '/compents/header.php';
 include_once __DIR__ . '/helpers/functions.php';
 include_once __DIR__ . '/config/connection.php';
@@ -64,10 +67,13 @@ if (isset($_POST['createUser'])) {
     header("Location: userManager.php?success=1");
     exit;
 }
+<<<<<<< HEAD
 =======
 include_once __DIR__ . '/components/header.php';
 
 >>>>>>> 6954315 (worked on user verification and ticket submittion by the user)
+=======
+>>>>>>> c8ab191 (added agent dashboard and agent ticketpage)
 
 ?>
 
