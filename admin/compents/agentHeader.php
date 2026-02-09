@@ -1,20 +1,8 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
-
-
-
-require_once __DIR__ . '/../config/connection.php';
-require_once __DIR__ . '/../models/UserModel.php';
-$userModel = new UserModel($pdo);
-
 require_once __DIR__ . '/../controllers/UserController.php';
-
-
 ?>
 <head>
     <meta charset="utf-8">
@@ -36,7 +24,7 @@ require_once __DIR__ . '/../controllers/UserController.php';
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
 
-
+    
 <div class="wrapper">
     <nav id="sidebar" class="sidebar js-sidebar">
         <div class="sidebar-content js-simplebar">
@@ -50,7 +38,7 @@ require_once __DIR__ . '/../controllers/UserController.php';
                 </li>
 
                 <li class="sidebar-item active">
-                    <a class="sidebar-link" href="ticket_manager.php">
+                    <a class="sidebar-link" href="agentTickets.php">
                         <i class="align-middle" data-feather="sliders"></i> <span class="align-middle">Ticket
                             Manager</span>
                     </a>
@@ -143,5 +131,3 @@ require_once __DIR__ . '/../controllers/UserController.php';
             </div>
 
         </nav>
-
-        

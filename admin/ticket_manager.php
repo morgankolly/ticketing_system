@@ -3,8 +3,18 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
-
-include_once __DIR__ . '/components/header.php';
+require_once __DIR__ . '/main/auth-middleware.php';
+include_once __DIR__ . '/compents/header.php';
+$usersStmt = $pdo->query("
+    SELECT users.user_id, users.user_name, users.email, users.created_at, users.profile, roles.role_name, users.role_id
+    FROM users
+    LEFT JOIN roles ON users.role_id = roles.role_id
+    ORDER BY users.created_at DESC
+");
+$agentRoleId = 2; // assuming role_id 2 = agent
+$usersStmt = $pdo->prepare("SELECT user_id, user_name FROM users WHERE role_id = ?");
+$usersStmt->execute([$agentRoleId]);
+$agents = $usersStmt->fetchAll();
 ?>
 
 <!DOCTYPE html>
@@ -83,14 +93,14 @@ include_once __DIR__ . '/components/header.php';
     <input type="hidden" name="ticket_id" value="<?= $ticket['ticket_id'] ?>">
 
     <select name="user_id" class="form-select" required>
-        <option value="">Select Agent</option>
-        <?php foreach ($users as $user): ?>
-            <option value="<?= $user['user_id'] ?>" 
-                <?= isset($ticket['user_id']) && $ticket['user_id'] == $user['user_id'] ? 'selected' : '' ?>>
-                <?= htmlspecialchars($user['user_name']) ?>
-            </option>
-        <?php endforeach; ?>
-    </select>
+    <option value="">Select Agent</option>
+    <?php foreach ($agents as $agent): ?>
+        <option value="<?= $agent['user_id'] ?>" 
+            <?= isset($ticket['user_id']) && $ticket['user_id'] == $agent['user_id'] ? 'selected' : '' ?>>
+            <?= htmlspecialchars($agent['user_name']) ?>
+        </option>
+    <?php endforeach; ?>
+</select>
 
     <button type="submit" name="assign_ticket" class="btn btn-primary">Assign</button>
 </form>

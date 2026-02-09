@@ -23,31 +23,8 @@
             ORDER BY users.user_id DESC
         ");
         $stmt->execute();
-
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-
     }
-
-    public function createUser($username, $email, $password, $role_id, $profile)
-    {
-        $sql = "INSERT INTO users (user_name, email, password, role_id, profile) 
-                VALUES (?, ?, ?, ?, ?)";
-
-        $stmt = $this->pdo->prepare($sql);
-        return $stmt->execute([
-            $username,
-            $email,
-            $password,
-            $role_id,
-            $profile,
-        ]);
-    }
-
-
-
-
-
         public function getUserByUsername(string $username): ?array {
             $stmt = $this->pdo->prepare("SELECT * FROM Users WHERE user_name = :user_name");
             $stmt->bindParam(':user_name', $username, PDO::PARAM_STR);
@@ -55,15 +32,20 @@
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
             return $user ?: null;
         }
-        public function registerUser(string $username, string $email, string $password, int $role){
-            $hashedPassword = password_hash($password, PASSWORD_BCRYPT); // encrypyt the password
-            $stmt = $this->pdo->prepare("INSERT INTO Users (user_name, email, password, role_id) VALUES (:user_name, :email, :password, :role)");
-            $stmt->bindParam(':user_name', $username, PDO::PARAM_STR);
-            $stmt->bindParam(':email', $email, PDO::PARAM_STR);
-            $stmt->bindParam(':password', $hashedPassword, PDO::PARAM_STR);
-            $stmt->bindParam(':role', $role, PDO::PARAM_INT);
-            return $stmt->execute();
-        }
+   
+
+
+    public function registerUser(string $username, string $email, string $password, int $role, string $profileImage = 'uploads/users/default.png'): bool {
+        $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
+        $stmt = $this->pdo->prepare("INSERT INTO Users (user_name, email, password, role_id, profile_image) VALUES (:user_name, :email, :password, :role, :profile_image)");
+        $stmt->bindParam(':user_name', $username, PDO::PARAM_STR);
+        $stmt->bindParam(':email', $email, PDO::PARAM_STR);
+        $stmt->bindParam(':password', $hashedPassword, PDO::PARAM_STR);
+        $stmt->bindParam(':role', $role, PDO::PARAM_INT);
+        $stmt->bindParam(':profile_image', $profileImage, PDO::PARAM_STR);
+        return $stmt->execute();
+    }
+
     public function updateUser($user_id, $username, $email, $role_id,$profile) {
         $stmt = $this->pdo->prepare("
             UPDATE `Users` SET 
@@ -203,11 +185,31 @@
         $stmt->execute();
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
     }
+    public function createUser(string $username, string $email, string $password, int $role_id, ?string $profile): bool {
+        $hashedPassword = password_hash($password, PASSWORD_BCRYPT); // encrypt the password
+
+        $stmt = $this->pdo->prepare(
+            "INSERT INTO users (user_name, email, password, role_id, profile) 
+             VALUES (:username, :email, :password, :role_id, :profile)"
+        );
+
+        return $stmt->execute([
+            ':username' => $username,
+            ':email' => $email,
+            ':password' => $hashedPassword,
+            ':role_id' => $role_id,
+            ':profile' => $profile
+        ]);
     }
+    public function emailExists($email) {
+    $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM users WHERE email = ?");
+    $stmt->execute([$email]);
+    return $stmt->fetchColumn() > 0;
+}
 
 
 
-    
+}
 
 
 
