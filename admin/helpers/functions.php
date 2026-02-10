@@ -1,8 +1,12 @@
 <?php
 
+<<<<<<< HEAD
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
+=======
+session_start();
+>>>>>>> 6954315 (worked on user verification and ticket submittion by the user)
 
 error_reporting(E_ALL);
 ini_set('display_errors', 1);

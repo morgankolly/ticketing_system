@@ -5,7 +5,9 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 require_once './main/require.php';
+require_once './controllers/AuthController.php';
 
+<<<<<<< HEAD
 function redirectByRole() {
     if ($_SESSION['role_id'] == 1) {
         header("Location: dashboard.php");
@@ -24,6 +26,21 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['role_id'])) {
 
 
 
+=======
+
+
+// Login controller
+if (isset($_POST["login"]) && isset($_POST["action"]) && $_POST["action"] === "login_user") {
+    // ... your login logic here ...
+}
+
+
+// Only redirect if user_id not set AND not already on login page
+if (!isset($_SESSION['user_id']) && basename($_SERVER['PHP_SELF']) != 'index.php') {
+	header("Location: index.php");
+	exit;
+}
+>>>>>>> 6954315 (worked on user verification and ticket submittion by the user)
 
 ?>
 <!DOCTYPE html>
@@ -67,7 +84,6 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['role_id'])) {
 							<div class="card-body">
 								<div class="m-sm-3">
 									<form method="POST">
-										<!-- action value must match what the controller expects -->
 										<input type="hidden" name="action" value="login_user" />
 
 										<div class="mb-3">
@@ -94,6 +110,7 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['role_id'])) {
 												in</button>
 										</div>
 									</form>
+
 
 
 								</div>

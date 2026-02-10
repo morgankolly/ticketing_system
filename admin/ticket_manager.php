@@ -3,6 +3,7 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
+<<<<<<< HEAD
 require_once __DIR__ . '/main/auth-middleware.php';
 include_once __DIR__ . '/compents/header.php';
 $usersStmt = $pdo->query("
@@ -15,6 +16,10 @@ $agentRoleId = 2; // assuming role_id 2 = agent
 $usersStmt = $pdo->prepare("SELECT user_id, user_name FROM users WHERE role_id = ?");
 $usersStmt->execute([$agentRoleId]);
 $agents = $usersStmt->fetchAll();
+=======
+
+include_once __DIR__ . '/components/header.php';
+>>>>>>> 6954315 (worked on user verification and ticket submittion by the user)
 ?>
 
 <!DOCTYPE html>
@@ -30,6 +35,7 @@ $agents = $usersStmt->fetchAll();
 
     <div class="container mt-5">
         <h1>Ticket Manager</h1>
+<<<<<<< HEAD
 
         <?php if (isset($message)): ?>
             <div class="alert alert-success"><?= htmlspecialchars($message) ?></div>
@@ -61,6 +67,39 @@ $agents = $usersStmt->fetchAll();
             </div>
         </form>
 
+=======
+
+        <?php if (isset($message)): ?>
+            <div class="alert alert-success"><?= htmlspecialchars($message) ?></div>
+        <?php endif; ?>
+
+        <!-- Filter Form -->
+        <form method="GET" class="row g-3 mb-4">
+            <div class="col-md-3">
+                <label class="form-label">Priority</label>
+                <select name="priority" class="form-select">
+                    <option value="">All</option>
+                    <?php foreach ($ticketPriorities as $p): ?>
+                        <option value="<?= htmlspecialchars($p) ?>" <?= $priority === $p ? 'selected' : '' ?>>
+                            <?= ucfirst(htmlspecialchars($p)) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Start Date</label>
+                <input type="date" name="start_date" class="form-control" value="<?= htmlspecialchars($startDate) ?>">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">End Date</label>
+                <input type="date" name="end_date" class="form-control" value="<?= htmlspecialchars($endDate) ?>">
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">Filter</button>
+            </div>
+        </form>
+
+>>>>>>> 6954315 (worked on user verification and ticket submittion by the user)
         <!-- Tickets Table -->
         <?php if (empty($newTickets)): ?>
             <p>No tickets found.</p>
@@ -93,6 +132,7 @@ $agents = $usersStmt->fetchAll();
     <input type="hidden" name="ticket_id" value="<?= $ticket['ticket_id'] ?>">
 
     <select name="user_id" class="form-select" required>
+<<<<<<< HEAD
     <option value="">Select Agent</option>
     <?php foreach ($agents as $agent): ?>
         <option value="<?= $agent['user_id'] ?>" 
@@ -101,6 +141,16 @@ $agents = $usersStmt->fetchAll();
         </option>
     <?php endforeach; ?>
 </select>
+=======
+        <option value="">Select Agent</option>
+        <?php foreach ($users as $user): ?>
+            <option value="<?= $user['user_id'] ?>" 
+                <?= isset($ticket['user_id']) && $ticket['user_id'] == $user['user_id'] ? 'selected' : '' ?>>
+                <?= htmlspecialchars($user['user_name']) ?>
+            </option>
+        <?php endforeach; ?>
+    </select>
+>>>>>>> 6954315 (worked on user verification and ticket submittion by the user)
 
     <button type="submit" name="assign_ticket" class="btn btn-primary">Assign</button>
 </form>
