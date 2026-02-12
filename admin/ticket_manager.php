@@ -4,12 +4,12 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 
-include_once __DIR__ . '/compents/header.php';
+
 include_once __DIR__ . '/config/connection.php';
 require_once __DIR__ . '/controllers/UserController.php';
 require_once __DIR__ . '/models/TicketModel.php';
 require_once __DIR__ . '/controllers/TicketController.php';
-
+include_once __DIR__ . '/compents/header.php';
 $ticketModel = new TicketModel($pdo);
 
 // fetch tickets and agents
@@ -20,7 +20,104 @@ $agentsStmt = $pdo->prepare("SELECT user_id, user_name FROM users WHERE role_id 
 $agentsStmt->execute([$agentRoleId]);
 $agents = $agentsStmt->fetchAll(PDO::FETCH_ASSOC);
 
+if (isset($_POST['assign_ticket'])) {
 
+    $ticketRef = trim($_POST['ticket_ref'] ?? '');
+    $userId    = (int) ($_POST['user_id'] ?? 0);
+
+    // ✅ Validate input
+    if ($ticketRef === '' || $userId <= 0) {
+        $_SESSION['error'] = "Ticket reference or agent is missing.";
+        header("Location: ../ticket_manager.php");
+        exit;
+    }
+
+    try {
+
+        $ticketModel = new TicketModel($pdo);
+
+        // ✅ First check if ticket exists
+        $stmt = $pdo->prepare("SELECT ticket_id FROM tickets WHERE reference = :reference LIMIT 1");
+        $stmt->execute([':reference' => $ticketRef]);
+        $ticket = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$ticket) {
+            $_SESSION['error'] = "Ticket not found.";
+            header("Location: ../ticket_manager.php");
+            exit;
+        }
+
+        $ticketId = (int)$ticket['ticket_id'];
+
+        // ✅ Assign ticket
+        $assigned = $ticketModel->assignTicket($ticketRef, $userId);
+
+        if (!$assigned) {
+            $_SESSION['error'] = "Failed to assign ticket.";
+            header("Location: ../ticket_manager.php");
+            exit;
+        }
+
+        // ✅ Fetch agent
+        $stmt = $pdo->prepare("
+            SELECT email, user_name 
+            FROM users 
+            WHERE user_id = :user_id 
+            LIMIT 1
+        ");
+        $stmt->execute([':user_id' => $userId]);
+        $agent = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$agent) {
+            $_SESSION['error'] = "Agent not found.";
+            header("Location: ../ticket_manager.php");
+            exit;
+        }
+
+        // ✅ Send email safely
+        if (function_exists('sendemail') && filter_var($agent['email'], FILTER_VALIDATE_EMAIL)) {
+
+            $subject = "New Ticket Assigned (#{$ticketRef})";
+
+            $body = "
+                <h3>New Ticket Assigned</h3>
+                <p>Hello <strong>" . htmlspecialchars($agent['user_name']) . "</strong>,</p>
+                <p>A new ticket has been assigned to you.</p>
+                <p><strong>Ticket Reference:</strong> " . htmlspecialchars($ticketRef) . "</p>
+                <p>Please log in to the system to view and respond.</p>
+                <br>
+                <p>Regards,<br>Ticketing System</p>
+            ";
+
+            sendemail($agent['email'], $agent['user_name'], $subject, $body);
+        }
+
+        // ✅ Insert notification
+        $notif_stmt = $pdo->prepare("
+            INSERT INTO notifications (ticket_id, reference, message, created_at)
+            VALUES (:ticket_id, :reference, :message, NOW())
+        ");
+
+        $notif_stmt->execute([
+            ':ticket_id' => $ticketId,
+            ':reference' => $ticketRef,
+            ':message'   => "Ticket {$ticketRef} has been assigned to {$agent['user_name']}."
+        ]);
+
+        $_SESSION['success'] = "Ticket assigned successfully.";
+
+        echo "<script>
+            alert('Ticket assigned successfully!');
+            window.location.href='ticket_manager.php';
+          </script>";
+
+    } catch (PDOException $e) {
+
+        $_SESSION['error'] = "Database Error: " . $e->getMessage();
+        header("Location: ../ticket_manager.php");
+        exit;
+    }
+}
 ?>
 
 <!DOCTYPE html>
