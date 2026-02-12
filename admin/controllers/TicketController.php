@@ -117,9 +117,201 @@ if (isset($_POST['createTicket'])) {
 }
 
 
+if (isset($_POST['createTicket'])) {
+    try {
+        // --- Prepare ticket data ---
+        $data = [
+            'title'         => $_POST['title'] ?? '',
+            'description'   => $_POST['description'] ?? '',
+            'email'         => $_POST['email'] ?? '',
+            'status'        => 'open',
+            'priority'      => $_POST['priority'] ?? 'medium',
+            'category_id'   => $_POST['category_id'] ?? 1,
+            'user_id'       => null,
+            'contact'       => $_POST['contact'] ?? null,
+            'support_email' => $_POST['support_email'] ?? null,
+        ];
 
+        // --- Validate required fields ---
+        if (empty($data['title']) || empty($data['description']) || empty($data['email'])) {
+            throw new Exception("Please fill in all required fields: Title, Description, Email.");
+        }
 
+        // --- Create ticket ---
+        $ticket_id = $TicketModel->createTicket($data);
 
+        // --- Handle file upload ---
+        if (!empty($_FILES['file']['name'])) {
+            $uploadDir = __DIR__ . "/uploads/";
+            if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+
+            $fileName = basename($_FILES['file']['name']);
+            $fileTmp  = $_FILES['file']['tmp_name'];
+            $fileType = mime_content_type($fileTmp);
+            $filePath = $uploadDir . time() . "_" . $fileName;
+
+            $allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+            if (in_array($fileType, $allowedTypes)) {
+                if (move_uploaded_file($fileTmp, $filePath)) {
+                    $fileStmt = $pdo->prepare("
+                        INSERT INTO ticket_files (ticket_id, file_name, file_path, file_type)
+                        VALUES (:ticket_id, :file_name, :file_path, :file_type)
+                    ");
+                    $fileStmt->execute([
+                        ':ticket_id' => $ticket_id,
+                        ':file_name' => $fileName,
+                        ':file_path' => 'uploads/' . time() . "_" . $fileName,
+                        ':file_type' => $fileType
+                    ]);
+                }
+            }
+        }
+
+        // --- Send confirmation email to ticket sender ---
+        if (!empty($data['email']) && filter_var($data['email'], FILTER_VALIDATE_EMAIL) && function_exists('sendemail')) {
+            $subject = "Ticket Received - #{$ticket_id}";
+            $body = "
+                <h2>Thank You for Contacting Support</h2>
+                <p>Hello,</p>
+                <p>Your support ticket has been successfully submitted.</p>
+
+                <h3>Ticket Details</h3>
+                <p><strong>Ticket ID:</strong> #{$ticket_id}</p>
+                <p><strong>Title:</strong> " . htmlspecialchars($data['title']) . "</p>
+                <p><strong>Description:</strong><br>" . nl2br(htmlspecialchars($data['description'])) . "</p>
+                <p><strong>Priority:</strong> " . htmlspecialchars($data['priority']) . "</p>
+                <p><strong>Status:</strong> Open</p>
+
+                <p>Our team will get back to you shortly.</p>
+                <br>
+                <p>Best regards,<br>Support Team</p>
+            ";
+
+            sendemail($data['email'], "Customer", $subject, $body);
+        }
+
+        // --- Notify all admins ---
+        $adminStmt = $pdo->prepare("SELECT email FROM users WHERE role_id = 1");
+        $adminStmt->execute();
+        $admins = $adminStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($admins as $admin) {
+            $notif_stmt = $pdo->prepare("
+                INSERT INTO notifications (email, ticket_id, message, is_read, created_at)
+                VALUES (:email, :ticket_id, :message, 0, NOW())
+            ");
+            $notif_stmt->execute([
+                ':email'     => $admin['email'],
+                ':ticket_id' => $ticket_id,
+                ':message'   => "New ticket (#$ticket_id) submitted by {$data['email']}."
+            ]);
+        }
+
+        // --- Success message ---
+        echo "<script>
+                alert('Thank you! Your ticket has been submitted successfully.');
+                window.location.href='index.php';
+              </script>";
+
+    } catch (PDOException $e) {
+        echo "<script>alert('Database Error: {$e->getMessage()}');</script>";
+    } catch (Exception $e) {
+        echo "<script>alert('Error: {$e->getMessage()}');</script>";
+    }
+}
+
+if (isset($_POST['assign_ticket'])) {
+
+    // ✅ Match exact form field names
+    $ticketRef = trim($_POST['ticket_ref'] ?? '');
+    $userId = isset($_POST['user_id']) ? (int) $_POST['user_id'] : 0;
+
+    // ✅ Strong validation
+    if (empty($ticketRef) || $userId <= 0) {
+        echo "<script>
+                alert('Ticket reference or agent is missing.');
+                window.history.back();
+              </script>";
+        exit;
+    }
+
+    try {
+
+        // ✅ Initialize model
+        $ticketModel = new TicketModel($pdo);
+
+        // 1️⃣ Assign ticket
+        $assigned = $ticketModel->assignTicket($ticketRef, $userId);
+
+        if (!$assigned) {
+            echo "<script>
+                    alert('Failed to assign ticket.');
+                    window.history.back();
+                  </script>";
+            exit;
+        }
+
+        // 2️⃣ Fetch agent info safely
+        $stmt = $pdo->prepare("
+            SELECT email, user_name 
+            FROM users 
+            WHERE user_id = :user_id 
+            LIMIT 1
+        ");
+        $stmt->execute([':user_id' => $userId]);
+        $agent = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($agent) {
+
+            // 3️⃣ Send email
+            $subject = "New Ticket Assigned (#{$ticketRef})";
+
+            $body = "
+                <h3>New Ticket Assigned</h3>
+                <p>Hello <strong>" . htmlspecialchars($agent['user_name']) . "</strong>,</p>
+                <p>A new ticket has been assigned to you.</p>
+                <p><strong>Ticket Reference:</strong> " . htmlspecialchars($ticketRef) . "</p>
+                <p>Please log in to the system to view and respond.</p>
+                <br>
+                <p>Regards,<br>Ticketing System</p>
+            ";
+
+            sendemail($agent['email'], $agent['user_name'], $subject, $body);
+
+            // 4️⃣ Insert system notification
+            $notif_msg = "Ticket {$ticketRef} has been assigned to {$agent['user_name']}.";
+            $stmt = $pdo->prepare("SELECT ticket_id FROM tickets WHERE reference = :reference LIMIT 1");
+            $stmt->execute([':reference' => $ticketRef]);
+            $ticket = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$ticket) {
+                die("Ticket not found.");
+            }
+
+            $ticketId = $ticket['ticket_id'];
+            $notif_stmt = $pdo->prepare("
+                  INSERT INTO notifications (ticket_id, reference, message) 
+    VALUES (:ticket_id, :reference, :message)
+");
+
+            $notif_stmt->execute([
+                ':ticket_id' => $ticketId,
+                ':reference' => $ticketRef,
+                ':message' => $notif_msg
+            ]);
+        }
+
+        // 5️⃣ Success redirect
+        echo "<script>
+                alert('Ticket assigned successfully and agent notified!');
+                window.location.href='../ticket_manager.php';
+              </script>";
+        exit;
+
+    } catch (PDOException $e) {
+        die("Database Error: " . $e->getMessage());
+    }
+}
 
 
 $priority = $_GET['priority'] ?? '';
