@@ -1,4 +1,40 @@
 <?php
+ 
+require_once __DIR__ . '/../config/connection.php';  // defines $pdo
+require_once __DIR__ . '/../models/UserModel.php';
+require_once __DIR__ . '/../helpers/functions.php';
+// Now $pdo exists, so you can pass it to UserModel
+$UserModel = new UserModel($pdo);
+
+
+
+
+$users = $UserModel->getAllUsers();
+$totalUsers = count($users);
+$users = $UserModel->getAllUsers();
+
+$agents = $pdo->query(
+    "SELECT user_id, user_name 
+     FROM users 
+     WHERE role_id = 'agent'"
+)->fetchAll(PDO::FETCH_ASSOC);
+
+$totalUsers = count($users);
+
+
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['getAllUsers'])) {
+    $username = $_POST['user_name'] ?? '';
+    $email = $_POST['email'] ?? '';
+    $role = $_POST['role'] ?? '';
+    $status = $_POST['Status'] ?? '';
+
+}
+$users = $pdo->query("SELECT user_id, user_name FROM users WHERE role_id = 'agent'")->fetchAll(PDO::FETCH_ASSOC);
+$Users = $UserModel->getAllUsers();
+$totalUsers= count($UserModel->getAllUsers());
 
 if (!isset($userModel)) {
     return; // stop execution if loaded too early
@@ -19,6 +55,7 @@ $agents = $pdo->query(
 )->fetchAll(PDO::FETCH_ASSOC);
 
 $totalUsers = count($users);
+
 
 if (isset($_POST['createUser'])) {
 
@@ -168,6 +205,46 @@ if (isset($_POST['updateUser'])) {
     }
 }
 
+if (isset($_POST['createUser'])) {
+    $username = trim($_POST['name']);
+    $email    = trim($_POST['email']);
+    $password = $_POST['password'];
+    $role     = (int) $_POST['role_id'];
+
+    // Handle profile image upload
+    $profileImage = 'uploads/users/default.png'; // default image
+    if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error'] === 0) {
+        $ext = pathinfo($_FILES['profile_image']['name'], PATHINFO_EXTENSION);
+        $allowed = ['jpg', 'jpeg', 'png', 'gif'];
+
+        if (in_array(strtolower($ext), $allowed)) {
+            $newFileName = uniqid('user_') . '.' . $ext;
+            $uploadDir = __DIR__ . '/uploads/users/';
+            if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+
+            $destination = $uploadDir . $newFileName;
+            if (move_uploaded_file($_FILES['profile_image']['tmp_name'], $destination)) {
+                $profileImage = 'uploads/users/' . $newFileName;
+            }
+        }
+    }
+
+
+    if ($userModel->userExists($username, $email)) {
+        $error = "Username '$username' is already taken!";
+    } elseif ($userModel->emailExists($email)) {
+        $error = "Email '$email' is already registered!";
+    } else {
+        // Use registerUser to insert safely
+        try {
+            $userModel->registerUser($username, $email, $password, $role, $profileImage);
+            header("Location: users.php");
+            exit;
+        } catch (PDOException $e) {
+            $error = "Database error: " . $e->getMessage();
+        }
+    }
+}
 
 if (isset($_POST['createUser'])) {
     $username = trim($_POST['name']);
@@ -192,6 +269,7 @@ if (isset($_POST['createUser'])) {
             }
         }
     }
+
 
     if ($userModel->userExists($username, $email)) {
         $error = "Username '$username' is already taken!";

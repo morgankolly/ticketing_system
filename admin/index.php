@@ -6,6 +6,9 @@ if (session_status() === PHP_SESSION_NONE) {
 
 require_once './main/require.php';
 
+require_once './controllers/AuthController.php';
+
+
 function redirectByRole() {
     if ($_SESSION['role_id'] == 1) {
         header("Location: dashboard.php");
@@ -25,7 +28,11 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['role_id'])) {
 
 
 
+
+
 ?>
+
+
 <!DOCTYPE html>
 <html lang="en">
 

@@ -28,7 +28,7 @@ require_once __DIR__ . '/../controllers/UserController.php';
 <div class="wrapper">
     <nav id="sidebar" class="sidebar js-sidebar">
         <div class="sidebar-content js-simplebar">
-            <a class="sidebar-brand" href="dashboard.php">
+            <a class="sidebar-brand" href="agentDashboard.php">
                 <span class="align-middle">Ticketing System</span>
             </a>
 
@@ -45,8 +45,8 @@ require_once __DIR__ . '/../controllers/UserController.php';
                 </li>
 
                 <li class="sidebar-item">
-                    <a class="sidebar-link" href="userManager.php">
-                        <i class="align-middle" data-feather="user"></i> <span class="align-middle">Users</span>
+                    <a class="sidebar-link" href="agentNotifications.php">
+                        <i class="align-middle" data-feather="user"></i> <span class="align-middle">Notications</span>
                     </a>
                 </li>
 

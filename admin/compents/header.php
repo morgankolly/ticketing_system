@@ -1,21 +1,25 @@
+
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
-
-
-
 require_once __DIR__ . '/../config/connection.php';
 require_once __DIR__ . '/../models/UserModel.php';
+require_once __DIR__ . '/../controllers/UserController.php';
 $userModel = new UserModel($pdo);
 
-require_once __DIR__ . '/../controllers/UserController.php';
+if (!isset($role_id)) {
+    $role_id = '1'; 
+    $user_name = 'Admin';
+} elseif (!isset($role_id)) {
+    $role_id = '2';
+    $user_name = 'Agent';
+}
+
 
 
 ?>
+
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -35,7 +39,6 @@ require_once __DIR__ . '/../controllers/UserController.php';
     <link href="assets/css/app.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
-
 
 <div class="wrapper">
     <nav id="sidebar" class="sidebar js-sidebar">
@@ -142,6 +145,10 @@ require_once __DIR__ . '/../controllers/UserController.php';
                 </ul>
             </div>
 
+
+        </nav>
+
         </nav>
 
         
+

@@ -1,4 +1,5 @@
 <?php
+
 require_once './main/require.php';
 
  unset($_SESSION['username']);

@@ -35,6 +35,8 @@ if (isset($_POST["login"]) && isset($_POST["action"]) && $_POST["action"] === "l
 
     $user = $UserModel->getUserByEmail($email);
 
+
+
     if (!$user || !password_verify($password, $user["password"])) {
         echo "<script>alert('Invalid email or password.'); window.location.href='index.php';</script>";
         exit;
@@ -52,6 +54,26 @@ if (isset($_POST["login"]) && isset($_POST["action"]) && $_POST["action"] === "l
         header("Location: index.php");
     }
     exit;
+
+    if (!$user) {
+
+
+        echo "<script>alert('Invalid email or password.'); window.location.href='index.php';</script>";
+        exit;
+    }
+
+    $_SESSION['user_id']   = $user["user_id"];
+    $_SESSION['username'] = $user["username"];
+    $_SESSION['role_id']  = $user["role_id"];
+
+    if ($user["role_id"] == 1) {
+        header("Location: dashboard.php");
+    } elseif ($user["role_id"] == 2) {
+        header("Location: agentDashboard.php");
+    } else {
+        header("Location: index.php");
+    }
+
 }
 
 
