@@ -5,31 +5,9 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 require_once './main/require.php';
-<<<<<<< HEAD
+
 require_once './controllers/AuthController.php';
 
-<<<<<<< HEAD
-function redirectByRole() {
-    if ($_SESSION['role_id'] == 1) {
-        header("Location: dashboard.php");
-    } elseif ($_SESSION['role_id'] == 2) {
-        header("Location: agentDashboard.php");
-    } else {
-        header("Location: index.php");
-    }
-    exit;
-}
-
-if (isset($_SESSION['user_id']) && isset($_SESSION['role_id'])) {
-    redirectByRole();
-}
-
-
-
-
-=======
-=======
->>>>>>> c8ab191 (added agent dashboard and agent ticketpage)
 
 function redirectByRole() {
     if ($_SESSION['role_id'] == 1) {
@@ -47,19 +25,14 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['role_id'])) {
 }
 
 
-<<<<<<< HEAD
-// Only redirect if user_id not set AND not already on login page
-if (!isset($_SESSION['user_id']) && basename($_SERVER['PHP_SELF']) != 'index.php') {
-	header("Location: index.php");
-	exit;
-}
->>>>>>> 6954315 (worked on user verification and ticket submittion by the user)
-=======
 
 
->>>>>>> c8ab191 (added agent dashboard and agent ticketpage)
+
+
 
 ?>
+
+
 <!DOCTYPE html>
 <html lang="en">
 

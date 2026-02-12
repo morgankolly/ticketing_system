@@ -1,18 +1,17 @@
 <?php
+ 
+require_once __DIR__ . '/../config/connection.php';  // defines $pdo
+require_once __DIR__ . '/../models/UserModel.php';
+require_once __DIR__ . '/../helpers/functions.php';
+// Now $pdo exists, so you can pass it to UserModel
+$UserModel = new UserModel($pdo);
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-if (!isset($userModel)) {
-    return; // stop execution if loaded too early
-}
 
-/* =========================
-   USER DATA
-========================= */
 
-$users = $userModel->getAllUsers();
+
+$users = $UserModel->getAllUsers();
 $totalUsers = count($users);
-$users = $userModel->getAllUsers();
+$users = $UserModel->getAllUsers();
 
 $agents = $pdo->query(
     "SELECT user_id, user_name 
@@ -22,7 +21,7 @@ $agents = $pdo->query(
 
 $totalUsers = count($users);
 
-=======
+
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
@@ -36,8 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['getAllUsers'])) {
 $users = $pdo->query("SELECT user_id, user_name FROM users WHERE role_id = 'agent'")->fetchAll(PDO::FETCH_ASSOC);
 $Users = $UserModel->getAllUsers();
 $totalUsers= count($UserModel->getAllUsers());
->>>>>>> 6954315 (worked on user verification and ticket submittion by the user)
-=======
+
 if (!isset($userModel)) {
     return; // stop execution if loaded too early
 }
@@ -58,7 +56,7 @@ $agents = $pdo->query(
 
 $totalUsers = count($users);
 
->>>>>>> c8ab191 (added agent dashboard and agent ticketpage)
+
 if (isset($_POST['createUser'])) {
 
     $username = trim($_POST['username']);
@@ -231,7 +229,7 @@ if (isset($_POST['createUser'])) {
         }
     }
 
-<<<<<<< HEAD
+
     if ($userModel->userExists($username, $email)) {
         $error = "Username '$username' is already taken!";
     } elseif ($userModel->emailExists($email)) {
@@ -247,7 +245,7 @@ if (isset($_POST['createUser'])) {
         }
     }
 }
-=======
+
 if (isset($_POST['createUser'])) {
     $username = trim($_POST['name']);
     $email    = trim($_POST['email']);
@@ -271,7 +269,7 @@ if (isset($_POST['createUser'])) {
             }
         }
     }
->>>>>>> c8ab191 (added agent dashboard and agent ticketpage)
+
 
     if ($userModel->userExists($username, $email)) {
         $error = "Username '$username' is already taken!";

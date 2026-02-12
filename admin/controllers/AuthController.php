@@ -34,8 +34,8 @@ if (isset($_POST["login"]) && isset($_POST["action"]) && $_POST["action"] === "l
     $password = $_POST["password"];
 
     $user = $UserModel->getUserByEmail($email);
-<<<<<<< HEAD
-<<<<<<< HEAD
+
+
 
     if (!$user || !password_verify($password, $user["password"])) {
         echo "<script>alert('Invalid email or password.'); window.location.href='index.php';</script>";
@@ -54,12 +54,10 @@ if (isset($_POST["login"]) && isset($_POST["action"]) && $_POST["action"] === "l
         header("Location: index.php");
     }
     exit;
-=======
+
     if (!$user) {
-=======
 
-    if (!$user || !password_verify($password, $user["password"])) {
->>>>>>> c8ab191 (added agent dashboard and agent ticketpage)
+
         echo "<script>alert('Invalid email or password.'); window.location.href='index.php';</script>";
         exit;
     }
@@ -75,11 +73,7 @@ if (isset($_POST["login"]) && isset($_POST["action"]) && $_POST["action"] === "l
     } else {
         header("Location: index.php");
     }
-<<<<<<< HEAD
->>>>>>> 6954315 (worked on user verification and ticket submittion by the user)
-=======
-    exit;
->>>>>>> c8ab191 (added agent dashboard and agent ticketpage)
+
 }
 
 

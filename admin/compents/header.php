@@ -1,44 +1,25 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> c8ab191 (added agent dashboard and agent ticketpage)
-<?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-<<<<<<< HEAD
-=======
-to be more specific this is my header<?php
 
->>>>>>> 6954315 (worked on user verification and ticket submittion by the user)
-=======
->>>>>>> c8ab191 (added agent dashboard and agent ticketpage)
+<?php
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
-
-<<<<<<< HEAD
-
 require_once __DIR__ . '/../config/connection.php';
 require_once __DIR__ . '/../models/UserModel.php';
+require_once __DIR__ . '/../controllers/UserController.php';
 $userModel = new UserModel($pdo);
 
-require_once __DIR__ . '/../controllers/UserController.php';
+if (!isset($role_id)) {
+    $role_id = '1'; 
+    $user_name = 'Admin';
+} elseif (!isset($role_id)) {
+    $role_id = '2';
+    $user_name = 'Agent';
+}
+
 
 
 ?>
-=======
->>>>>>> c8ab191 (added agent dashboard and agent ticketpage)
 
-
-require_once __DIR__ . '/../config/connection.php';
-require_once __DIR__ . '/../models/UserModel.php';
-$userModel = new UserModel($pdo);
-
-require_once __DIR__ . '/../controllers/UserController.php';
-
-
-?>
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -59,29 +40,6 @@ require_once __DIR__ . '/../controllers/UserController.php';
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-
-=======
-    <header>
-    <h1>Welcome, <?= htmlspecialchars($user_name) ?></h1>
-    <nav>
-        <?php if ($user_role === "1"): // Admin ?>
-            <a href="manage_users.php">Manage Users</a>
-            <a href="all_tickets.php">All Tickets</a>
-            <a href="reports.php">Reports</a>
-        <?php elseif ($user_role === "2"): // Agent ?>
-            <a href="agent_tickets.php">My Tickets</a>
-            <a href="update_status.php">Update Ticket Status</a>
-        <?php endif; ?>
-
-       
-    </nav>
-</header>
->>>>>>> 6954315 (worked on user verification and ticket submittion by the user)
-=======
-
->>>>>>> c8ab191 (added agent dashboard and agent ticketpage)
 <div class="wrapper">
     <nav id="sidebar" class="sidebar js-sidebar">
         <div class="sidebar-content js-simplebar">
@@ -187,16 +145,10 @@ require_once __DIR__ . '/../controllers/UserController.php';
                 </ul>
             </div>
 
-<<<<<<< HEAD
-<<<<<<< HEAD
+
+        </nav>
+
         </nav>
 
         
-=======
-        </nav>
->>>>>>> 6954315 (worked on user verification and ticket submittion by the user)
-=======
-        </nav>
 
-        
->>>>>>> c8ab191 (added agent dashboard and agent ticketpage)

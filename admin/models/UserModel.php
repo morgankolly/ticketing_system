@@ -6,9 +6,9 @@
             $this->pdo = $pdo;
         }
 
-        public function getUserById($id) {
+        public function getUserById($user_id) {
         $stmt = $this->pdo->prepare("SELECT * FROM Users WHERE user_id = :user_id");
-        $stmt->bindParam(':user_id', $id, PDO::PARAM_INT);
+        $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
         $stmt->execute();
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }

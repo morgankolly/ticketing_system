@@ -1,249 +1,84 @@
-    <?php
-
+<?php
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 require_once __DIR__ . '/admin/config/connection.php';
-require_once __DIR__ . '/admin/controllers/TicketController.php';
+require_once __DIR__ . '/admin/models/TicketModel.php';
+require_once __DIR__ . '/admin/helpers/functions.php'; 
+include_once __DIR__ . '/admin/controllers/TicketController.php';
+
+$TicketModel = new TicketModel($pdo);
+
+// Fetch categories
 $stmt = $pdo->prepare("SELECT category_id, category_name FROM category ORDER BY category_name ASC");
 $stmt->execute();
-$categories = $stmt->fetchAll(PDO::FETCH_ASSOC);    
+$categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    ?>
-    <!DOCTYPE html>
 
-    <head>
-        <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-        <meta name="description" content="Responsive Admin &amp; Dashboard Template based on Bootstrap 5">
-        <meta name="author" content="AdminKit">
-        <meta name="keywords"
-            content="adminkit, bootstrap, bootstrap 5, admin, dashboard, template, responsive, css, sass, html, theme, front-end, ui kit, web">
+?>
 
-        <link rel="preconnect" href="https://fonts.gstatic.com">
-        <link rel="shortcut icon" href="img/icons/icon-48x48.png" />
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Submit Ticket</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container mt-5">
+    <h2>Submit a Support Ticket</h2>
+    <form method="POST" action="" enctype="multipart/form-data">
 
-        <link rel="canonical" href="https://demo-basic.adminkit.io/" />
+        <input type="hidden" name="status" value="open">
 
-        <title>Ticketing System</title>
-
-        <link href="admin/assets/css/app.css" rel="stylesheet">
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
-    </head>
-
-    <body>
-        <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <title>Submit Ticket</title>
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    </head>
-    <body>
-    <div class="container mt-5">
-        <h2>Submit a Support Ticket</h2>
-
-        <form method="POST" action="" enctype="multipart/form-data">
-        <!-- Title -->
         <div class="mb-3">
-            <label class="form-label">Title</label>
+            <label class="form-label">Title <span class="text-danger">*</span></label>
             <input type="text" name="title" class="form-control" required>
         </div>
 
-        <!-- Description -->
         <div class="mb-3">
-            <label class="form-label">Description</label>
+            <label class="form-label">Description <span class="text-danger">*</span></label>
             <textarea name="description" class="form-control" rows="5" required></textarea>
         </div>
 
-        <!-- Email -->
         <div class="mb-3">
-            <label class="form-label">Email</label>
+            <label class="form-label">Your Email <span class="text-danger">*</span></label>
             <input type="email" name="email" class="form-control" required>
         </div>
 
-        <!-- Category ID -->
-            <div class="mb-3">
-                <label class="form-label">Category</label>
-                <select name="category_id" class="form-select" required>
-                    <option value="" disabled selected>Select a category</option>
-                    <?php foreach ($categories as $category): ?>
-                        <option value="<?= $category['category_id'] ?>">
-                            <?= htmlspecialchars($category['category_name']) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-
-        <!-- Contact -->
         <div class="mb-3">
-            <label class="form-label">Contact</label>
-            <input type="text" name="contact" class="form-control">
-        </div>
-=======
-
-=======
->>>>>>> c8ab191 (added agent dashboard and agent ticketpage)
-require_once __DIR__ . '/admin/config/connection.php';
-require_once __DIR__ . '/admin/controllers/TicketController.php';
-$stmt = $pdo->prepare("SELECT category_id, category_name FROM category ORDER BY category_name ASC");
-$stmt->execute();
-$categories = $stmt->fetchAll(PDO::FETCH_ASSOC);    
-
-    ?>
-    <!DOCTYPE html>
-
-    <head>
-        <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-        <meta name="description" content="Responsive Admin &amp; Dashboard Template based on Bootstrap 5">
-        <meta name="author" content="AdminKit">
-        <meta name="keywords"
-            content="adminkit, bootstrap, bootstrap 5, admin, dashboard, template, responsive, css, sass, html, theme, front-end, ui kit, web">
-
-        <link rel="preconnect" href="https://fonts.gstatic.com">
-        <link rel="shortcut icon" href="img/icons/icon-48x48.png" />
-
-        <link rel="canonical" href="https://demo-basic.adminkit.io/" />
-
-        <title>Ticketing System</title>
-
-        <link href="admin/assets/css/app.css" rel="stylesheet">
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
-    </head>
-
-    <body>
-        <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <title>Submit Ticket</title>
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    </head>
-    <body>
-    <div class="container mt-5">
-        <h2>Submit a Support Ticket</h2>
-
-        <form method="POST" action="" enctype="multipart/form-data">
-        <!-- Title -->
-        <div class="mb-3">
-            <label class="form-label">Title</label>
-            <input type="text" name="title" class="form-control" required>
+            <label class="form-label">Category <span class="text-danger">*</span></label>
+            <select name="category_id" class="form-select" required>
+                <option value="" disabled selected>Select a category</option>
+                <?php foreach ($categories as $category): ?>
+                    <option value="<?= (int)$category['category_id'] ?>">
+                        <?= htmlspecialchars($category['category_name']) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
         </div>
 
-        <!-- Description -->
         <div class="mb-3">
-            <label class="form-label">Description</label>
-            <textarea name="description" class="form-control" rows="5" required></textarea>
-        </div>
-
-        <!-- Email -->
-        <div class="mb-3">
-            <label class="form-label">Email</label>
-            <input type="email" name="email" class="form-control" required>
-        </div>
-
-        <!-- Category ID -->
-            <div class="mb-3">
-                <label class="form-label">Category</label>
-                <select name="category_id" class="form-select" required>
-                    <option value="" disabled selected>Select a category</option>
-                    <?php foreach ($categories as $category): ?>
-                        <option value="<?= $category['category_id'] ?>">
-                            <?= htmlspecialchars($category['category_name']) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-
-        <!-- Contact -->
-        <div class="mb-3">
-            <label class="form-label">Contact</label>
+            <label class="form-label">Contact Number (optional)</label>
             <input type="text" name="contact" class="form-control">
         </div>
 
-        <!-- Support Email -->
         <div class="mb-3">
-            <label class="form-label">Support Email</label>
+            <label class="form-label">Support Email (optional)</label>
             <input type="email" name="support_email" class="form-control">
         </div>
 
-        <!-- File Attachment -->
         <div class="mb-3">
-            <label class="form-label">Attach File</label>
-            <input type="file" name="file" class="form-control"> <!-- Name updated to "file" -->
+            <label class="form-label">Attach File (Images only)</label>
+            <input type="file" name="file" class="form-control"
+                   accept="image/png,image/jpeg,image/gif">
         </div>
 
-        <!-- Status -->
-    
-
-        <!-- Priority -->
-        <div class="mb-3">
-            <label class="form-label">Priority</label>
-            <select name="priority" class="form-select">
-                <option value="low">Low</option>
-                <option value="medium" selected>Medium</option>
-                <option value="high">High</option>
-            </select>
-        </div>
-
-        <button type="submit" name="submitTicket" class="btn btn-primary">Submit Ticket</button>
-<<<<<<< HEAD
-    </div>
-</form>
->>>>>>> 6954315 (worked on user verification and ticket submittion by the user)
-
-
-<<<<<<< HEAD
-        <!-- File Attachment -->
-        <div class="mb-3">
-            <label class="form-label">Attach File</label>
-            <input type="file" name="file" class="form-control"> <!-- Name updated to "file" -->
-        </div>
-=======
+        <button type="submit" name="createTicket" class="btn btn-primary">
+            Submit Ticket
+        </button>
     </form>
->>>>>>> c8ab191 (added agent dashboard and agent ticketpage)
-
-        <!-- Status -->
-    
-
-<<<<<<< HEAD
-        <!-- Priority -->
-        <div class="mb-3">
-            <label class="form-label">Priority</label>
-            <select name="priority" class="form-select">
-                <option value="low">Low</option>
-                <option value="medium" selected>Medium</option>
-                <option value="high">High</option>
-            </select>
-        </div>
-
-        <button type="submit" name="submitTicket" class="btn btn-primary">Submit Ticket</button>
-    </form>
-=======
 </div>
 </body>
 </html>
->>>>>>> 6954315 (worked on user verification and ticket submittion by the user)
-=======
-    </div>
-    </body>
-    </html>
->>>>>>> c8ab191 (added agent dashboard and agent ticketpage)
-
-
-    </div>
-    </body>
-    </html>
-
-<<<<<<< HEAD
-
-
-=======
->>>>>>> c8ab191 (added agent dashboard and agent ticketpage)
-    </form>
