@@ -79,13 +79,12 @@ if (!function_exists('sendnotification')) {
 
 function generateTicketRef($length = 6)
 {
-    $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    $characters = '0123456789';
     $ref = '';
     for ($i = 0; $i < $length; $i++) {
         $ref .= $characters[rand(0, strlen($characters) - 1)];
     }
 
-    $timestamp = date('YmdHis'); // e.g., 20260212123045
 
-    return 'TICKET-' . $ref . '-' . $timestamp;
+    return 'TN-' . $ref ;
 }

@@ -1,7 +1,9 @@
 <?php
 
+$roleModel = new RoleModel($pdo);
+$roles = $roleModel->getRoles();
 
-    $roles = $RoleModel->getRoles();
+   
 
   
 
