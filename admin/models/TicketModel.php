@@ -143,19 +143,23 @@ class TicketModel
     }
 
    
-    public function createFullTicket($data, $file = null)
+ public function createFullTicket($data, $file = null)
 {
     try {
-
         $this->pdo->beginTransaction();
 
         // Insert ticket
         $stmt = $this->pdo->prepare("
             INSERT INTO tickets 
-            (reference, title, description, email, status, priority, category_id, user_id, contact, support_email, created_at)
+            (reference, title, description, email, status, priority, category_id, user_id, contact, support_email, message_id, created_at)
             VALUES 
-            (:reference, :title, :description, :email, :status, :priority, :category_id, :user_id, :contact, :support_email, NOW())
+            (:reference, :title, :description, :email, :status, :priority, :category_id, :user_id, :contact, :support_email, :message_id, NOW())
         ");
+
+        // Ensure message_id exists
+        if (empty($data['message_id'])) {
+            $data['message_id'] = "<ticket-{$data['reference']}@morgankolly5@gmail.com>";
+        }
 
         $stmt->execute([
             ':reference'     => $data['reference'],
@@ -167,7 +171,8 @@ class TicketModel
             ':category_id'   => $data['category_id'],
             ':user_id'       => $data['user_id'],
             ':contact'       => $data['contact'],
-            ':support_email' => $data['support_email']
+            ':support_email' => $data['support_email'],
+            ':message_id'    => $data['message_id']
         ]);
 
         $ticket_id = $this->pdo->lastInsertId();
@@ -202,14 +207,18 @@ class TicketModel
 
         $this->pdo->commit();
 
-        return $ticket_id;
+        // Return ticket ID and message_id
+        return [
+            'ticket_id'  => $ticket_id,
+            'message_id' => $data['message_id']
+        ];
 
     } catch (Exception $e) {
-
         $this->pdo->rollBack();
         throw $e;
     }
 }
+
 public function notifyAdmins($ticketId, $customerEmail)
 {
     $stmt = $this->pdo->prepare("SELECT email FROM users WHERE role_id = 1");

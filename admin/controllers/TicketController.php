@@ -10,10 +10,10 @@ require_once __DIR__ . '/../models/notificationModel.php';
 $TicketModel = new TicketModel($pdo);
 $UserModel   = new UserModel($pdo);
 
+
+
 if (isset($_POST['createTicket'])) {
-
     try {
-
         $ticketRef = generateTicketRef();
 
         $data = [
@@ -26,32 +26,41 @@ if (isset($_POST['createTicket'])) {
             'user_id'       => null,
             'contact'       => $_POST['contact'] ?? null,
             'support_email' => $_POST['support_email'] ?? null,
-            'reference'     => $ticketRef
+            'reference'     => $ticketRef,
+            'message_id'    => "<ticket-{$ticketRef}@yourdomain.com>"
         ];
 
         if (empty($data['title']) || empty($data['description']) || empty($data['email'])) {
             throw new Exception("Please fill in all required fields.");
         }
 
-        $ticket_id = $TicketModel->createFullTicket($data, $_FILES['file'] ?? null);
+        // 1️⃣ Create the ticket
+        $ticket = $TicketModel->createFullTicket($data, $_FILES['file'] ?? null);
 
-        if (filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
-            $TicketModel->sendCustomerEmail($data, $ticketRef);
-             echo "<script>alert('Ticket submitted successfully.'); window.location.href='index.php';</script>";
+        // 2️⃣ Send confirmation email
+        $emailBody = "
+            <p>Hello,</p>
+            <p>Your ticket has been submitted successfully:</p>
+            <p><strong>Reference:</strong> {$ticketRef}</p>
+            <p><strong>Title:</strong> {$data['title']}</p>
+            <p>Support Team</p>
+        ";
 
-        exit;
-        }
+        sendemail(
+            $data['email'],
+            $data['title'],
+            "Ticket Submitted: {$ticketRef}",
+            $emailBody,
+            ['Message-ID' => $data['message_id']] // threading
+        );
 
-        $TicketModel->notifyAdmins($ticket_id, $data['email']);
+        // 3️⃣ Notify admins (optional)
+        $TicketModel->notifyAdmins($ticket['ticket_id'], $data['email']);
 
-        $_SESSION['success'] = "Ticket submitted successfully.";
-         // 5️⃣ Success
         echo "<script>alert('Ticket submitted successfully.'); window.location.href='index.php';</script>";
-
         exit;
 
     } catch (Exception $e) {
-
         $_SESSION['error'] = $e->getMessage();
         header("Location: index.php");
         exit;
@@ -60,9 +69,11 @@ if (isset($_POST['createTicket'])) {
 
 
 
+
+
 if (isset($_POST['assign_ticket'])) {
     $ticketRef = trim($_POST['ticket_ref'] ?? '');
-    $userId = isset($_POST['user_id']) ? (int) $_POST['user_id'] : 0;
+    $userId    = isset($_POST['user_id']) ? (int) $_POST['user_id'] : 0;
 
     if (empty($ticketRef) || $userId <= 0) {
         echo "<script>alert('Ticket reference or agent is missing.'); window.history.back();</script>";
@@ -71,40 +82,50 @@ if (isset($_POST['assign_ticket'])) {
 
     try {
         $ticketModel = new TicketModel($pdo);
-        $userModel = new UserModel($pdo);
-        $notifModel = new notificationModel($pdo);
+        $userModel   = new UserModel($pdo);
+        $notifModel  = new notificationModel($pdo);
 
-        // 1️⃣ Assign ticket
+        // --- Assign ticket ---
         if (!$ticketModel->assignTicket($ticketRef, $userId)) {
             echo "<script>alert('Failed to assign ticket.'); window.history.back();</script>";
             exit;
         }
 
-        // 2️⃣ Fetch agent info
+        // --- Fetch agent info ---
         $agent = $userModel->getUserById($userId);
         if (!$agent) throw new Exception("Agent not found.");
 
-        // 3️⃣ Send email
+        // --- Fetch ticket info ---
+        $ticket = $ticketModel->getTicketByReference($ticketRef);
+        if (!$ticket) throw new Exception("Ticket not found.");
+
+        // --- Email headers for threading ---
+        $assignMessageId = "<assign-" . uniqid() . "morgankolly5@gmail.com>";
+        $headers = [
+            'Message-ID'  => $assignMessageId,
+            'In-Reply-To' => $ticket['message_id'],
+            'References'  => $ticket['message_id']
+        ];
+
+        // --- Email body ---
         $subject = "New Ticket Assigned (#{$ticketRef})";
         $body = "
             <h3>New Ticket Assigned</h3>
             <p>Hello <strong>" . htmlspecialchars($agent['user_name']) . "</strong>,</p>
             <p>A new ticket has been assigned to you.</p>
-            <p><strong>Ticket Reference:</strong> " . htmlspecialchars($ticketRef) . "</p>
+            <p><strong>Ticket Reference:</strong> {$ticketRef}</p>
             <p>Please log in to the system to view and respond.</p>
             <br>
             <p>Regards,<br>Ticketing System</p>
         ";
-        sendemail($agent['email'], $agent['user_name'], $subject, $body);
 
-        // 4️⃣ Create notification
-        $ticket = $ticketModel->getTicketByReference($ticketRef);
-        if (!$ticket) throw new Exception("Ticket not found.");
+        // --- Send email to agent ---
+        sendemail($agent['email'], $agent['user_name'], $subject, $body, $headers);
 
+        // --- Create system notification ---
         $notifMsg = "Ticket {$ticketRef} has been assigned to {$agent['user_name']}.";
         $notifModel->createNotification($ticket['ticket_id'], $ticketRef, $notifMsg);
 
-        // 5️⃣ Success
         echo "<script>alert('Ticket assigned successfully and agent notified!'); window.location.href='ticket_manager.php';</script>";
         exit;
 
@@ -112,6 +133,7 @@ if (isset($_POST['assign_ticket'])) {
         die("Error: " . $e->getMessage());
     }
 }
+
 
 
 $priority = $_GET['priority'] ?? '';
@@ -153,15 +175,13 @@ $agents = $agentsStmt->fetchAll(PDO::FETCH_ASSOC);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_comment'])) {
 
-    // --- AUTH CHECK: ONLY AGENTS ---
+    // --- Only agents can comment ---
     if (!isset($_SESSION['user_id']) || $_SESSION['role_id'] != 2) {
         exit('Unauthorized');
     }
 
     $ticketRef = $_GET['ticket_ref'] ?? $_POST['ticket_ref'] ?? null;
-    if (!$ticketRef) {
-        die("Ticket reference missing.");
-    }
+    if (!$ticketRef) die("Ticket reference missing.");
 
     $comment  = trim($_POST['comment']);
     $agentId  = $_SESSION['user_id'];
@@ -172,27 +192,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_comment'])) {
         exit;
     }
 
-    // --- FETCH TICKET INFO FIRST ---
-    $stmt = $pdo->prepare("SELECT ticket_id, email FROM tickets WHERE reference = ? LIMIT 1");
-    $stmt->execute([$ticketRef]);
-    $ticket = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    if (!$ticket) {
-        die("Ticket not found for reference '$ticketRef'");
-    }
+    // --- Fetch ticket info ---
+    $ticket = $TicketModel->getTicketByReference($ticketRef);
+    if (!$ticket) die("Ticket not found for reference '$ticketRef'");
 
     $ticketId = $ticket['ticket_id'];
 
-    // --- INSERT COMMENT WITH REFERENCE ---
+    // --- Insert comment ---
     $stmt = $pdo->prepare("
-        INSERT INTO ticket_comments 
-            (ticket_id, agent_id, comment, parent_comment_id, reference)
+        INSERT INTO ticket_comments (ticket_id, agent_id, comment, parent_comment_id, reference)
         VALUES (?, ?, ?, ?, ?)
     ");
     $stmt->execute([$ticketId, $agentId, $comment, $parentId, $ticketRef]);
 
-    // --- DETERMINE RECIPIENT EMAIL ---
-    $recipientEmail = $ticket['email'];
+    // --- Determine recipient email ---
+    $recipientEmail = $ticket['email']; // default to ticket submitter
     if ($parentId) {
         $stmt = $pdo->prepare("
             SELECT COALESCE(commenter_email, ?) AS email 
@@ -204,10 +218,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_comment'])) {
         $recipientEmail = $parentComment['email'] ?? $ticket['email'];
     }
 
-    // --- EMAIL CONTENT ---
+    // --- Email headers for threading ---
+    $replyMessageId = "<reply-" . uniqid() . "@yourdomain.com>";
+    $headers = [
+        'Message-ID'  => $replyMessageId,
+        'In-Reply-To' => $ticket['message_id'],
+        'References'  => $ticket['message_id']
+    ];
+
+    // --- Email subject & body ---
     $emailSubject = $parentId
-        ? "Reply to your comment on ticket: " . $ticketRef
-        : "Update on your ticket: " . $ticketRef;
+        ? "Reply to your comment on ticket: {$ticketRef}"
+        : "Update on your ticket: {$ticketRef}";
 
     $emailBody = "
         <p>Hello,</p>
@@ -215,19 +237,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_comment'])) {
         <blockquote style='border-left:3px solid #ccc;padding-left:10px;'>
             " . nl2br(htmlspecialchars($comment)) . "
         </blockquote>
-        <p><strong>Ticket Ref:</strong> $ticketRef</p>
+        <p><strong>Ticket Ref:</strong> {$ticketRef}</p>
         <p>Support Team</p>
     ";
 
-    // --- SEND EMAIL ---
-    if ($recipientEmail && filter_var($recipientEmail, FILTER_VALIDATE_EMAIL)) {
-        sendemail($recipientEmail, 'Support Team', $emailSubject, $emailBody);
-    }
+    // --- Send email ---
+    sendemail($recipientEmail, 'Support Team', $emailSubject, $emailBody, $headers);
 
-    // --- REDIRECT BACK ---
     echo "<script>
         alert('Comment added successfully!');
-        window.location.href='ticketComments.php?ticket_ref=$ticketRef';
+        window.location.href='ticketComments.php?ticket_ref={$ticketRef}';
     </script>";
     exit;
 }
