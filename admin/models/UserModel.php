@@ -6,12 +6,7 @@
             $this->pdo = $pdo;
         }
 
-        public function getUserById($user_id) {
-        $stmt = $this->pdo->prepare("SELECT * FROM Users WHERE user_id = :user_id");
-        $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
-        $stmt->execute();
-        return $stmt->fetch(PDO::FETCH_ASSOC);
-    }
+     
 
 
         public function getAllUsers()
@@ -123,22 +118,7 @@
             return $stmt->execute();
 
         }
-    public function userExists($username, $email)
-    {
-        $sql = "SELECT user_name, email FROM users 
-                WHERE user_name = :user_name OR email = :email LIMIT 1";
-
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->bindParam(':user_name', $username, PDO::PARAM_STR);
-        $stmt->bindParam(':email', $email, PDO::PARAM_STR);
-        $stmt->execute();
-
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        if (!$row) return false;
-
-        if ($row['user_name'] === $username) return 'username';
-        if ($row['email'] === $email) return 'email';
-    }
+   
         
 
     public function updateUserPassword(string $username, string $password)
@@ -171,13 +151,7 @@
 
             return $stmt->rowCount() > 0; 
         }
-        public function UserExistsByEmail(string $email): bool {
-            $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM Users WHERE email = :email");
-            $stmt->bindParam(':email', $email, PDO::PARAM_STR);
-            $stmt->execute();
-            $count = $stmt->fetchColumn();
-            return $count > 0;
-    }
+    
 
     public function getUserByEmail(string $email): ?array {
         $stmt = $this->pdo->prepare("SELECT * FROM users WHERE email = :email");
@@ -185,30 +159,65 @@
         $stmt->execute();
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
     }
-    public function createUser(string $username, string $email, string $password, int $role_id, ?string $profile): bool {
-        $hashedPassword = password_hash($password, PASSWORD_BCRYPT); // encrypt the password
-
-        $stmt = $this->pdo->prepare(
-            "INSERT INTO users (user_name, email, password, role_id, profile) 
-             VALUES (:username, :email, :password, :role_id, :profile)"
-        );
-
-        return $stmt->execute([
-            ':username' => $username,
-            ':email' => $email,
-            ':password' => $hashedPassword,
-            ':role_id' => $role_id,
-            ':profile' => $profile
-        ]);
-    }
+  
     public function emailExists($email) {
     $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM users WHERE email = ?");
     $stmt->execute([$email]);
     return $stmt->fetchColumn() > 0;
 }
+    public function getUserById(int $userId): ?array {
+        $stmt = $this->pdo->prepare("
+            SELECT user_name, email 
+            FROM users 
+            WHERE user_id = :user_id 
+            LIMIT 1
+        ");
+        $stmt->execute([':user_id' => $userId]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $user ?: null;
+    }
 
 
+ public function userExists(string $username, string $email): bool {
 
+        $sql = "SELECT COUNT(*) FROM users 
+                WHERE user_name = :username OR email = :email";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([
+            ':username' => $username,
+            ':email'    => $email
+        ]);
+
+        return $stmt->fetchColumn() > 0;
+    }
+
+
+    public function createUser(
+        string $username,
+        string $email,
+        string $password,
+        int $role_id,
+        ?string $profile
+    ): int {
+
+        $sql = "INSERT INTO users 
+                    (user_name, email, password, role_id, profile_image, created_at)
+                VALUES 
+                    (:username, :email, :password, :role_id, :profile, NOW())";
+
+        $stmt = $this->pdo->prepare($sql);
+
+        $stmt->execute([
+            ':username' => $username,
+            ':email'    => $email,
+            ':password' => $password,
+            ':role_id'  => $role_id,
+            ':profile'  => $profile
+        ]);
+
+        return (int) $this->pdo->lastInsertId();
+    }
 }
 
 

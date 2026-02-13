@@ -2,12 +2,7 @@
 session_start();
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
-if (!isset($_SESSION['user_id'])) {
-    header("Location: index.php"); // or login page
-    exit;
-}
 
-$userId = $_SESSION['user_id'];
 require_once __DIR__ . '/config/connection.php'; // Make sure this works
 require_once __DIR__ . '/models/TicketModel.php';
 require_once __DIR__ . '/compents/agentHeader.php';
@@ -37,7 +32,7 @@ $assignedTickets = $TicketModel->getTicketsByUser($agentId);
     <table class="table table-bordered table-striped mt-4">
         <thead>
             <tr>
-                <th>#</th>
+                <th>Reference</th>
                 <th>Title</th>
                 <th>Description</th>
                 <th>Status</th>
@@ -55,7 +50,7 @@ $assignedTickets = $TicketModel->getTicketsByUser($agentId);
             <?php else: ?>
                 <?php foreach ($assignedTickets as $ticket): ?>
                     <tr>
-                        <td><?= htmlspecialchars($ticket['ticket_id']) ?></td>
+                        <td><?= htmlspecialchars($ticket['reference']) ?></td>
                         <td><?= htmlspecialchars($ticket['title']) ?></td>
                         <td><?= htmlspecialchars($ticket['description']) ?></td>
                         <td><?= htmlspecialchars($ticket['status']) ?></td>
@@ -63,8 +58,10 @@ $assignedTickets = $TicketModel->getTicketsByUser($agentId);
                         <td><?= htmlspecialchars($ticket['created_at']) ?></td>
                         <td><?= htmlspecialchars($ticket['assigned_by'] ?? 'System') ?></td>
                         <td>
-                            <a href="viewTickets.php?ticket_id=<?= urlencode($ticket['ticket_id']) ?>" 
-                               class="btn btn-sm btn-primary">View</a>
+                            <a href="viewTickets.php?ticket_ref=<?= urlencode($ticket['reference']) ?>" 
+                               class="btn btn-sm btn-primary">
+                                View
+                            </a>
                         </td>
                     </tr>
                 <?php endforeach; ?>
@@ -73,4 +70,6 @@ $assignedTickets = $TicketModel->getTicketsByUser($agentId);
     </table>
 </div>
 </body>
+</html>
+
 </html>

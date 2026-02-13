@@ -6,4 +6,4 @@ if (isset($_POST["insertCategory"]) && !empty($_POST["category_name"])) {
 } 
  
 
-    $categories= $CategoryModel->fetchAllCategories();
+

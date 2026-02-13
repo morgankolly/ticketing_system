@@ -1,5 +1,5 @@
+<?php   ob_start(); // start buffering
 
-<?php
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
@@ -7,7 +7,6 @@ require_once __DIR__ . '/../config/connection.php';
 require_once __DIR__ . '/../models/UserModel.php';
 require_once __DIR__ . '/../controllers/UserController.php';
 $userModel = new UserModel($pdo);
-
 if (!isset($role_id)) {
     $role_id = '1'; 
     $user_name = 'Admin';
@@ -16,7 +15,6 @@ if (!isset($role_id)) {
     $user_name = 'Agent';
 }
 ?>
-
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">

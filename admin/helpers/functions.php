@@ -18,33 +18,37 @@ require_once __DIR__ . '/../config/connection.php';
 
 
 if (!function_exists('sendemail')) {
-    function sendemail($email, $name, $subject, $body)
+    function sendemail($email, $name, $subject, $body, $headers = [])
     {
         $mail = new PHPMailer(true);
         try {
-            //Server settings
-            //$mail->SMTPDebug = SMTP::DEBUG_SERVER;
+            // Server settings
             $mail->isSMTP();
-            $mail->Host = 'smtp.gmail.com';
-            $mail->SMTPAuth = true;
-            $mail->Username = 'morgankolly5@gmail.com';
-            $mail->Password = 'aypx pwwf rbnq swdq';
+            $mail->Host       = 'smtp.gmail.com';
+            $mail->SMTPAuth   = true;
+            $mail->Username   = 'morgankolly5@gmail.com';
+            $mail->Password   = 'aypx pwwf rbnq swdq'; // App password
             $mail->SMTPSecure = "ssl";
-            $mail->Port = 465;
+            $mail->Port       = 465;
 
-            //Recipients
+            // Recipients
             $mail->setFrom('morgankolly5@gmail.com', 'Morgan Kolly Ticketing System');
             $mail->addAddress($email, $name);
 
-            //Content
+            // Content
             $mail->isHTML(true);
             $mail->Subject = $subject;
-            $mail->Body = $body;
+            $mail->Body    = $body;
+
+            // Custom headers (Message-ID, In-Reply-To, References)
+            foreach ($headers as $key => $value) {
+                $mail->addCustomHeader($key, $value);
+            }
 
             $mail->send();
-            echo 'Message has been sent';
+            // echo 'Message has been sent'; // optional debug
         } catch (Exception $e) {
-            echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
+            error_log("Mailer Error: {$mail->ErrorInfo}");
         }
     }
 }
@@ -79,13 +83,12 @@ if (!function_exists('sendnotification')) {
 
 function generateTicketRef($length = 6)
 {
-    $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    $characters = '0123456789';
     $ref = '';
     for ($i = 0; $i < $length; $i++) {
         $ref .= $characters[rand(0, strlen($characters) - 1)];
     }
 
-    $timestamp = date('YmdHis'); // e.g., 20260212123045
 
-    return 'TICKET-' . $ref . '-' . $timestamp;
+    return 'T-' . $ref ;
 }

@@ -4,41 +4,18 @@ session_start();
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-// --- AUTH GUARD (ONLY HERE) ---
-if (!isset($_SESSION['user_id'])) {
-    header("Location: index.php");
-    exit;
-}
 require_once 'config/connection.php';
 require_once 'models/TicketModel.php';
 require_once 'compents/agentHeader.php';
 require_once 'helpers/functions.php';
 require_once 'controllers/TicketController.php';
-$ticketId = $_GET['ticket_id'] ?? null;
-if (!$ticketId || !is_numeric($ticketId)) {
-    die("Invalid ticket ID");
-}
-$stmt = $pdo->prepare("
-    SELECT ticket_comments.*, 
-           COALESCE(users.user_name, ticket_comments.commenter_email, 'Agent') AS commenter_name
-    FROM ticket_comments
-    LEFT JOIN users ON ticket_comments.agent_id = users.user_id
-    WHERE ticket_comments.ticket_id = :ticketId AND ticket_comments.parent_comment_id IS NULL
-    ORDER BY ticket_comments.created_at ASC
-");
-$stmt->execute(['ticketId' => $ticketId]);
-$comments = $stmt->fetchAll(PDO::FETCH_ASSOC);
-foreach ($comments as &$comment) {
-    $stmt = $pdo->prepare("
-        SELECT ticket_comments.*, users.user_name AS commenter_name
-        FROM ticket_comments
-        LEFT JOIN users ON ticket_comments.agent_id = users.user_id
-        WHERE ticket_comments.parent_comment_id = :parentId
-        ORDER BY ticket_comments.created_at ASC
-    ");
-    $stmt->execute(['parentId' => $comment['comment_id']]);
-    $comment['replies'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
-}
+
+// -------------------------------
+// GET TICKET REFERENCE FROM URL
+// -------------------------------
+$ticketRef = $_GET['ticket_ref'] ?? null;
+
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -77,16 +54,16 @@ foreach ($comments as &$comment) {
     </div>
 <?php endforeach; ?>
 
-    <form method="POST" class="mt-3">
-        <div class="mb-3">
-            <label class="form-label">Your Comment</label>
-            <textarea name="comment" class="form-control" rows="4" required></textarea>
-        </div>
+    <form method="POST" enctype="multipart/form-data">
+    <input type="hidden" name="ticket_ref" value="<?= htmlspecialchars($_GET['ticket_ref'] ?? '') ?>">
 
-        <button type="submit" name="submit_comment" class="btn btn-primary">
-            Add Comment
-        </button>
-    </form>
+    <div class="mb-3">
+        <label>Comment</label>
+        <textarea name="comment" class="form-control" required></textarea>
+    </div>
+
+    <button type="submit" name="submit_comment" class="btn btn-primary">Submit</button>
+</form>
 
     <a href="agentTickets.php" class="btn btn-secondary mt-3">Back to Assigned Tickets</a>
 
