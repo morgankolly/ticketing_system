@@ -15,9 +15,6 @@ if (!isset($role_id)) {
     $role_id = '2';
     $user_name = 'Agent';
 }
-
-
-
 ?>
 
 <head>
