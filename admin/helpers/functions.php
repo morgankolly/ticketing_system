@@ -3,6 +3,7 @@ if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 
+
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
@@ -16,23 +17,23 @@ require __DIR__ . '/../../vendor/autoload.php';
 Dotenv\Dotenv::createImmutable(__DIR__ . '/../../')->load();
 require_once __DIR__ . '/../config/connection.php';
 
-
 if (!function_exists('sendemail')) {
     function sendemail($email, $name, $subject, $body, $headers = [])
     {
         $mail = new PHPMailer(true);
+
         try {
             // Server settings
             $mail->isSMTP();
             $mail->Host       = 'smtp.gmail.com';
             $mail->SMTPAuth   = true;
-            $mail->Username   = 'morgankolly5@gmail.com';
-            $mail->Password   = 'aypx pwwf rbnq swdq'; // App password
-            $mail->SMTPSecure = "ssl";
+            $mail->Username   = $_ENV['MAIL_USERNAME'];
+            $mail->Password   = $_ENV['MAIL_PASSWORD'];
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS; // SSL
             $mail->Port       = 465;
 
             // Recipients
-            $mail->setFrom('morgankolly5@gmail.com', 'Morgan Kolly Ticketing System');
+            $mail->setFrom($_ENV['MAIL_USERNAME'], 'Morgan Kolly Ticketing System');
             $mail->addAddress($email, $name);
 
             // Content
@@ -45,13 +46,19 @@ if (!function_exists('sendemail')) {
                 $mail->addCustomHeader($key, $value);
             }
 
-            $mail->send();
-            // echo 'Message has been sent'; // optional debug
+            if ($mail->send()) {
+                return true;   // ✅ IMPORTANT
+            } else {
+                return false;  // ✅ IMPORTANT
+            }
+
         } catch (Exception $e) {
-            error_log("Mailer Error: {$mail->ErrorInfo}");
+            error_log("Mailer Error: " . $mail->ErrorInfo);
+            return false; // ✅ IMPORTANT
         }
     }
 }
+    
 
 if (!function_exists('sendnotification')) {
     function sendnotification($subject, $email, $body)
@@ -61,12 +68,12 @@ if (!function_exists('sendnotification')) {
             $mail->isSMTP();
             $mail->Host = 'smtp.gmail.com';
             $mail->SMTPAuth = true;
-            $mail->Username = 'morgankolly5@gmail.com';
-            $mail->Password = 'aypx pwwf rbnq swdq';
+            $mail->Username = $_ENV['MAIL_USERNAME'];
+            $mail->Password = $_ENV['MAIL_PASSWORD'];
             $mail->SMTPSecure = "ssl";
             $mail->Port = 465;
 
-            $mail->setFrom('morgankolly5@gmail.com', 'Morgan Kolly Ticketing System');
+            $mail->setFrom($_ENV['MAIL_USERNAME'], 'Morgan Kolly Ticketing System');
             $mail->addAddress($email);
 
             $mail->isHTML(true);
@@ -90,5 +97,92 @@ function generateTicketRef($length = 6)
     }
 
 
-    return 'T-' . $ref ;
+    return 'T-' . $ref;
 }
+function generateMessageID($ticketRef)
+{
+    // Use your actual domain if you have one
+    $domain = $_ENV['MAIL_DOMAIN'] ?? 'morgankolly.com';
+
+    // Generate a unique ID
+    $unique = bin2hex(random_bytes(8));
+
+    return "<ticket-{$ticketRef}-{$unique}@{$domain}>";
+}
+function displayComments(array $comments)
+{
+    foreach ($comments as $comment): ?>
+        <div class="border p-3 mb-2">
+            <p><strong><?= htmlspecialchars($comment['commenter_name'] ?? 'Agent') ?></strong></p>
+            <p><?= nl2br(htmlspecialchars($comment['comment'])) ?></p>
+            <small><?= $comment['created_at'] ?></small>
+
+            <!-- Reply form -->
+            <form method="POST" class="mt-2">
+                <input type="hidden" name="ticket_ref" value="<?= htmlspecialchars($_GET['ticket_ref']) ?>">
+                <input type="hidden" name="parent_comment_id" value="<?= $comment['comment_id'] ?>">
+                <textarea name="comment" class="form-control mb-2" placeholder="Reply..." required></textarea>
+                <button type="submit" name="submit_comment" class="btn btn-sm btn-primary">Reply</button>
+            </form>
+
+            <?php if (!empty($comment['replies'])): ?>
+                <div class="ms-4 mt-2">
+                    <?php displayComments($comment['replies']); ?>
+                </div>
+            <?php endif; ?>
+        </div>
+    <?php endforeach;
+}
+
+function fetchUserReplies(PDO $pdo) {
+    // --- Connect to Gmail via IMAP ---
+    $mailbox = '{imap.gmail.com:993/imap/ssl}INBOX';
+    $username = 'morgankolly5@gmail.com';
+    $password = 'fibzakrruxcoenjj'; // use app password
+
+    $inbox = imap_open($mailbox, $username, $password);
+    if (!$inbox) {
+        error_log("IMAP connection failed: " . imap_last_error());
+        return;
+    }
+
+    // --- Search for unseen messages ---
+    $emails = imap_search($inbox, 'UNSEEN');
+    if (!$emails) {
+        imap_close($inbox);
+        return; // nothing to process
+    }
+
+    $ticketModel = new TicketModel($pdo);
+
+    foreach ($emails as $emailNumber) {
+        $overview = imap_fetch_overview($inbox, $emailNumber, 0)[0];
+        $message  = imap_fetchbody($inbox, $emailNumber, 1.1);
+
+        if (!$message) {
+            $message = imap_fetchbody($inbox, $emailNumber, 1);
+        }
+
+        $message = trim(strip_tags($message));
+
+        // --- Parse ticket reference from subject ---
+        // Example subject: "Re: Ticket T-356515"
+        if (preg_match('/T-\d+/', $overview->subject, $matches)) {
+            $ticketRef = $matches[0];
+        } else {
+            continue; // cannot find ticket reference
+        }
+
+        // --- Add the reply to ticket comments ---
+        if ($ticketRef && !empty($message)) {
+            $ticketModel->addEmailReply($ticketRef, $message);
+        }
+
+        // --- Mark email as read ---
+        imap_setflag_full($inbox, $emailNumber, "\\Seen");
+    }
+
+    imap_close($inbox);
+}
+
+?>

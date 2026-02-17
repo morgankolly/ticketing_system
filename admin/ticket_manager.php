@@ -47,11 +47,12 @@ $agents = $agentsStmt->fetchAll(PDO::FETCH_ASSOC);
                         <th>Title</th>
                         <th>Email</th>
                         <th>Description</th>
-                        <th>Priority</th>
+
                         <th>Status</th>
                         <th>Category ID</th>
                         <th>Created At</th>
                         <th>Assign To</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -61,12 +62,12 @@ $agents = $agentsStmt->fetchAll(PDO::FETCH_ASSOC);
                             <td><?= htmlspecialchars($ticket['title']) ?></td>
                             <td><?= htmlspecialchars($ticket['email']) ?></td>
                             <td><?= htmlspecialchars($ticket['description']) ?></td>
-                            <td><?= htmlspecialchars($ticket['priority']) ?></td>
                             <td><?= htmlspecialchars($ticket['status']) ?></td>
-                            <td><?= htmlspecialchars($ticket['category_id']) ?></td>
+                            <td><?= htmlspecialchars($ticket['category_name']) ?></td>
                             <td><?= $ticket['created_at'] ?></td>
                             <td>
-                                <!-- Form submits directly to controller -->
+
+                                <!-- Form submiteas directly to controller -->
                                 <form method="POST" action="" class="d-flex gap-2">
                                     <!-- Use ticket reference instead of ticket ID -->
                                     <input type="hidden" name="ticket_ref"
@@ -81,6 +82,8 @@ $agents = $agentsStmt->fetchAll(PDO::FETCH_ASSOC);
                                     </select>
 
                                     <button type="submit" name="assign_ticket" class="btn btn-primary">Assign</button>
+
+
                                 </form>
 
                             </td>
@@ -94,4 +97,4 @@ $agents = $agentsStmt->fetchAll(PDO::FETCH_ASSOC);
     </div>
 </body>
 
-</html>
+</html>     

@@ -10,6 +10,7 @@ $TicketModel = new TicketModel($pdo);
 $UserModel = new UserModel($pdo);
 $agentId = $_SESSION['user_id'];
 $assignedTickets = $TicketModel->getTicketsByUser($agentId);
+
 ?>
 
 <!DOCTYPE html>

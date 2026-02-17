@@ -2,8 +2,11 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
+
 require_once __DIR__ . '/../controllers/UserController.php';
 ?>
+
+    
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">

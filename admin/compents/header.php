@@ -100,28 +100,14 @@ if (!isset($role_id)) {
                             <div class="notifications">
                               
                         </a>
-                        <div class="dropdown-menu dropdown-menu-lg dropdown-menu-end py-0"
-                            aria-labelledby="messagesDropdown">
-                            <div class="dropdown-menu-header">
-                                <div class="position-relative">
-
-                                </div>
-                            </div>
-
-                            <div class="dropdown-menu-footer">
-                                <a href="#" class="text-muted">Show all messages</a>
-                            </div>
-                        </div>
+                        
                     </li>
                     <li class="nav-item dropdown">
                         <a class="nav-icon dropdown-toggle d-inline-block d-sm-none" href="#" data-bs-toggle="dropdown">
                             <i class="align-middle" data-feather="settings"></i>
                         </a>
 
-                        <a class="nav-link dropdown-toggle d-none d-sm-inline-block" href="#" data-bs-toggle="dropdown">
-                            <img src="img/avatars/avatar.jpg" class="avatar img-fluid rounded me-1"
-                                alt="Charles Hall" /> <span class="text-dark">Charles Hall</span>
-                        </a>
+                      
 
                         <div class="dropdown-menu dropdown-menu-end">
                             <a class="dropdown-item" href="pages-profile.html"><i class="align-middle me-1"
