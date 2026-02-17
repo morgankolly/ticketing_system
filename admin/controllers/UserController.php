@@ -57,41 +57,62 @@ $agents = $pdo->query(
 $totalUsers = count($users);
 
 
+
 if (isset($_POST['createUser'])) {
 
-    $username = trim($_POST['username']);
-    $email    = trim($_POST['email']);
-    $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
-    $role_id  = $_POST['role_id'];
+    try {
+        $username = trim($_POST['username'] ?? '');
+        $email    = trim($_POST['email'] ?? '');
+        $passwordRaw = $_POST['password'] ?? '';
+        $role_id  = (int)($_POST['role_id'] ?? 0);
 
-    if ($userModel->userExists($username, $email)) {
-        die("Username or Email already taken!");
-    }
-
-    $uploadDir = dirname(__DIR__, 2) . '/uploads/profile/';
-    $profile = null;
-
-    if (isset($_FILES['profile']) && $_FILES['profile']['error'] === UPLOAD_ERR_OK) {
-        $filename = time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $_FILES['profile']['name']);
-        $destination = $uploadDir . $filename;
-
-        if (!move_uploaded_file($_FILES['profile']['tmp_name'], $destination)) {
-            die('❌ Failed to upload profile image');
+        if ($username === '' || $email === '' || $passwordRaw === '' || $role_id <= 0) {
+            throw new Exception("All fields are required.");
         }
 
-        $profile = "http://localhost/ticketing-system/uploads/profile/" . $filename;
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw new Exception("Invalid email format.");
+        }
+
+        if ($userModel->userExists($username, $email)) {
+            throw new Exception("Username or Email already taken.");
+        }
+
+        $password = password_hash($passwordRaw, PASSWORD_DEFAULT);
+
+        // Handle profile upload
+        $profile = null;
+        $uploadDir = __DIR__ . '/uploads/profile/';
+        if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
+
+        if (!empty($_FILES['profile']['name'])) {
+            $allowedTypes = ['image/jpeg','image/png','image/gif'];
+            if (!in_array($_FILES['profile']['type'], $allowedTypes)) {
+                throw new Exception("Only JPG, PNG, GIF allowed.");
+            }
+
+            $filename = time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $_FILES['profile']['name']);
+            $destination = $uploadDir . $filename;
+            if (!move_uploaded_file($_FILES['profile']['tmp_name'], $destination)) {
+                throw new Exception("Upload failed.");
+            }
+
+            $profile = "uploads/profile/" . $filename;
+        }
+
+        // ✅ Now variables are guaranteed to exist and be valid
+        $userModel->createUser($username, $email, $password, $role_id, $profile);
+
+        $_SESSION['success'] = "User created successfully!";
+        header("Location: userManager.php"); // reload to avoid resubmission
+        exit;
+
+    } catch (Exception $e) {
+        $_SESSION['error'] = $e->getMessage();
+        header("Location: userManager.php");
+        exit;
     }
-
-    $userModel->createUser($username, $email, $password, $role_id, $profile);
-
-    echo "User created successfully!";
 }
-
-
-
-
-
-
 
 if (isset($_POST['registerUser'])) {
 
