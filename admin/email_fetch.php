@@ -3,7 +3,10 @@
 require_once 'config/connection.php';
 require_once 'models/TicketModel.php';
 require_once 'helpers/functions.php';
+require_once 'helpers/functions.php';
 
+// Make sure $pdo is defined in connection.php
+$ticketModel = new TicketModel($pdo);
 $hostname = '{imap.gmail.com:993/imap/ssl/novalidate-cert}INBOX';
 $username = $_ENV['MAIL_USERNAME'];
 $password = $_ENV['MAIL_PASSWORD'];
@@ -24,17 +27,28 @@ if ($emails) {
 
         $overview = imap_fetch_overview($inbox, $email_number, 0);
         $structure = imap_fetchstructure($inbox, $email_number);
-        $from     = $overview[0]->from ?? '';
-        $subject  = $overview[0]->subject ?? '';
-        $message  = imap_fetchbody($inbox, $email_number, 1);
+        $from = $overview[0]->from ?? '';
+        $subject = $overview[0]->subject ?? '';
+        $message = imap_fetchbody($inbox, $email_number, 1);
+
 
         // Decode body
         if (!empty($structure->parts[0])) {
             $part = $structure->parts[0];
-            if ($part->encoding == 3) $message = base64_decode($message);
-            if ($part->encoding == 4) $message = quoted_printable_decode($message);
+            if ($part->encoding == 3)
+                $message = base64_decode($message);
+            if ($part->encoding == 4)
+                $message = quoted_printable_decode($message);
         }
 
+        $message = strip_tags($message);
+
+// Decode HTML entities (optional)
+$message = html_entity_decode($message, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+// Clean reply (strip quoted text)
+$message = preg_split('/On .* wrote:/', $message)[0];
+$message = trim($message);
         // Clean reply (strip quoted text)
         $message = preg_split('/On .* wrote:/', $message)[0];
         $message = trim($message);
@@ -45,29 +59,30 @@ if ($emails) {
 
             // --- Find last agent comment sent to this user for threading ---
             $stmt = $pdo->prepare("
-                SELECT comment_id 
-                FROM ticket_comments 
-                WHERE reference = ? AND agent_id IS NOT NULL 
-                  AND (commenter_email = ? OR 1=1)
-                ORDER BY created_at DESC
-                LIMIT 1
-            ");
-            $stmt->execute([$ticketRef, $from]);
-            $parent = $stmt->fetch(PDO::FETCH_ASSOC);
-            $parentCommentId = $parent['comment_id'] ?? null;
+    SELECT comment_id 
+    FROM ticket_comments 
+    WHERE reference = ?
+      AND agent_id IS NOT NULL
+      AND commenter_email = ?
+    ORDER BY created_at DESC
+    LIMIT 1
+");
+$stmt->execute([$ticketRef, $from]);
+           $parent = $stmt->fetch(PDO::FETCH_ASSOC);
+$parentCommentId = $parent['comment_id'] ?? null;
 
-            $inserted = $ticketModel->insertUserEmailReply(
-                $ticketRef,
-                $message,
-                $from,
-                $parentId
-            );
+$inserted = $ticketModel->insertUserEmailReply(
+    $ticketRef,
+    $message,
+    $from,
+    $parentCommentId
+);
 
-            if ($inserted) {
-                echo "Inserted reply for $ticketRef from $from under comment ID $parentId<br>";
-            } else {
-                echo "Ticket $ticketRef not found.<br>";
-            }
+if ($inserted) {
+    echo "Inserted reply for $ticketRef from $from under comment ID $parentCommentId<br>";
+} else {
+    echo "Ticket $ticketRef not found.<br>";
+}
         } else {
             echo "No ticket reference in subject: $subject<br>";
         }

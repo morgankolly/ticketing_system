@@ -47,15 +47,15 @@ $agents = $agentsStmt->fetchAll(PDO::FETCH_ASSOC);
                         <th>Title</th>
                         <th>Email</th>
                         <th>Description</th>
-
                         <th>Status</th>
-                        <th>Category ID</th>
+                        <th>Category</th>
                         <th>Created At</th>
+                        <th>Priority</th>
                         <th>Assign To</th>
-                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
+                    
                     <?php foreach ($tickets as $ticket): ?>
                         <tr>
                             <td><?= $ticket['reference'] ?></td>
@@ -64,36 +64,50 @@ $agents = $agentsStmt->fetchAll(PDO::FETCH_ASSOC);
                             <td><?= htmlspecialchars($ticket['description']) ?></td>
                             <td><?= htmlspecialchars($ticket['status']) ?></td>
                             <td><?= htmlspecialchars($ticket['category_name']) ?></td>
-                            <td><?= $ticket['created_at'] ?></td>
+                            <td><?= $ticket['created_at'] ?></td>  
+                          <td>
+    <?php
+    // Define ENUM values (or fetch dynamically — shown below)
+    $priorities = ['low', 'medium', 'high', 'urgent'];
+    ?>
+
+</td>
                             <td>
+                               <form method="POST" action="" class="d-flex gap-2">
+    <input type="hidden" name="ticket_ref" value="<?= htmlspecialchars($ticket['reference']) ?>">
 
-                                <!-- Form submiteas directly to controller -->
-                                <form method="POST" action="" class="d-flex gap-2">
-                                    <!-- Use ticket reference instead of ticket ID -->
-                                    <input type="hidden" name="ticket_ref"
-                                        value="<?= htmlspecialchars($ticket['reference']) ?>">
-                                    <select name="user_id" class="form-select" required>
-                                        <option value="">Select Agent</option>
-                                        <?php foreach ($agents as $agent): ?>
-                                            <option value="<?= $agent['user_id'] ?>" <?= isset($ticket['user_id']) && $ticket['user_id'] == $agent['user_id'] ? 'selected' : '' ?>>
-                                                <?= htmlspecialchars($agent['user_name']) ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
-
-                                    <button type="submit" name="assign_ticket" class="btn btn-primary">Assign</button>
+    <select name="user_id" class="form-select" required>
+        <option value="">Select Agent</option>
+        <?php foreach ($agents as $agent): ?>
+            <option value="<?= $agent['user_id'] ?>" <?= isset($ticket['user_id']) && $ticket['user_id'] == $agent['user_id'] ? 'selected' : '' ?>>
+                <?= htmlspecialchars($agent['user_name']) ?>
+            </option>
+        <?php endforeach; ?>
+    </select>
 
 
-                                </form>
+    <select name="priority" class="form-select" required>
+        <option value="">Priority</option>
 
-                            </td>
+        <?php foreach ($priorities as $p): ?>
+            <option value="<?= $p ?>"
+                <?= (strtolower($ticket['priority'] ?? '') === $p) ? 'selected' : '' ?>>
+                <?= ucfirst($p) ?>
+            </option>
+        <?php endforeach; ?>
+
+    </select>
+    <button type="submit" name="assign_ticket" class="btn btn-primary">Assign</button>
+</form>
+</td>
+                            
                         </tr>
-                        </td>
-                        </tr>
+                        
                     <?php endforeach; ?>
                 </tbody>
             </table>
         <?php endif; ?>
+        
     </div>
 </body>
 

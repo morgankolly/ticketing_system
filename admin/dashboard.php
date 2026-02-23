@@ -3,7 +3,35 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
  include_once __DIR__ . '/compents/header.php'; 
+ require_once __DIR__ . '/config/connection.php';
+ require_once __DIR__ . '/controllers/UserController.php';
+ require_once __DIR__ . '/helpers/functions.php';
+ require_once __DIR__ . '/controllers/TicketController.php';
+ require_once __DIR__ . '/models/TicketModel.php';
+$ticketModel = new TicketModel($pdo);
 
+// Total tickets
+$totalTickets = $pdo->query("SELECT COUNT(*) FROM tickets")->fetchColumn();
+
+// Tickets by status
+$statusStats = $pdo->query("
+    SELECT status, COUNT(*) as total 
+    FROM tickets 
+    GROUP BY status
+")->fetchAll(PDO::FETCH_ASSOC);
+
+// Tickets by priority
+$priorityStats = $pdo->query("
+    SELECT priority, COUNT(*) as total 
+    FROM tickets 
+    GROUP BY priority
+")->fetchAll(PDO::FETCH_ASSOC);
+
+// High & urgent tickets
+$criticalTickets = $pdo->query("
+    SELECT COUNT(*) FROM tickets 
+    WHERE priority IN ('high','urgent')
+")->fetchColumn();
 
 
 ?>

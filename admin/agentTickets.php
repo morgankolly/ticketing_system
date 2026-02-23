@@ -11,6 +11,14 @@ $UserModel = new UserModel($pdo);
 $agentId = $_SESSION['user_id'];
 $assignedTickets = $TicketModel->getTicketsByUser($agentId);
 
+$reference = trim($_GET['reference'] ?? '');
+
+$ticketModel = new TicketModel($pdo);
+
+$tickets = $ticketModel->getAssignedTickets(
+    $_SESSION['user_id'],
+    $reference
+);
 ?>
 
 <!DOCTYPE html>
@@ -29,7 +37,18 @@ $assignedTickets = $TicketModel->getTicketsByUser($agentId);
 <body>
 <div class="container mt-5">
     <h2>Tickets Assigned to Me</h2>
+<form method="GET" class="mb-3 d-flex gap-2">
+    <input type="text" 
+           name="reference" 
+           class="form-control" 
+           placeholder="Enter Ticket Reference (e.g. T-842975)"
+           value="<?= htmlspecialchars($_GET['reference'] ?? '') ?>"
+           required>
 
+    <button type="submit" class="btn btn-primary">Find Ticket</button>
+
+    <a href="assigned_tickets.php" class="btn btn-secondary">Reset</a>
+</form>
     <table class="table table-bordered table-striped mt-4">
         <thead>
             <tr>
