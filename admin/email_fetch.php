@@ -96,3 +96,11 @@ if ($inserted) {
 
 imap_close($inbox);
 
+?>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Email Fetcher</title>
+    <meta http-equiv="refresh" content="20"> <!-- refresh page every 30 seconds -->
+</head>
+<body></body>

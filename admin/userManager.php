@@ -1,88 +1,84 @@
 <?php
-ob_start();          // start buffering output
-session_start();
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 
-require_once __DIR__ . '/config/connection.php';
-require_once __DIR__ . '/models/UserModel.php';
-require_once __DIR__ . '/models/RoleModel.php';
-require_once __DIR__ . '/compents/header.php';
+
+require_once 'config/connection.php';
+require_once 'compents/header.php';
+require_once 'helpers/functions.php';
+require_once 'controllers/UserController.php';
+require_once 'models/UserModel.php';
+require_once 'models/RoleModel.php';
 $userModel = new UserModel($pdo);
 $roleModel = new RoleModel($pdo);
-
-// Fetch roles for the dropdown
 $roles = $roleModel->getRoles();
+$users = $userModel->getAllUsers();
+$totalUsers = count($users);
 
-// Initialize variables
-$error = '';
-$success = '';
 
-// Handle form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['createUser'])) {
-    $username = trim($_POST['username'] ?? '');
-    $email    = trim($_POST['email'] ?? '');
-    $password = $_POST['password'] ?? '';
-    $role_id  = (int)($_POST['role_id'] ?? 0);
+if (isset($_POST['createUser'])) {
 
-    try {
-        // Validation
-        if ($username === '' || $email === '' || $password === '' || $role_id <= 0) {
-            throw new Exception("All fields are required.");
-        }
+    $username = trim($_POST['username']);
+    $email = trim($_POST['email']);
+    $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
+    $role_id = $_POST['role_id'];
 
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            throw new Exception("Invalid email format.");
-        }
-
-        if ($userModel->userExists($username, $email)) {
-            throw new Exception("Username or email already exists.");
-        }
-
-        // Hash password
-        $passwordHash = password_hash($password, PASSWORD_DEFAULT);
-
-        // Handle profile upload
-        $profile = 'uploads/users/default.png'; // default
-        if (!empty($_FILES['profile']['name']) && $_FILES['profile']['error'] === 0) {
-            $allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
-            if (!in_array($_FILES['profile']['type'], $allowedTypes)) {
-                throw new Exception("Only JPG, PNG, GIF images allowed.");
-            }
-
-            $uploadDir = __DIR__ . '/../uploads/users/';
-            if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
-
-            $ext = pathinfo($_FILES['profile']['name'], PATHINFO_EXTENSION);
-            $filename = uniqid('user_') . '.' . $ext;
-            $destination = $uploadDir . $filename;
-
-            if (!move_uploaded_file($_FILES['profile']['tmp_name'], $destination)) {
-                throw new Exception("Failed to upload profile image.");
-            }
-
-            $profile = 'uploads/users/' . $filename;
-        }
-
-        // Create user
-        $userModel->registerUser($username, $email, $passwordHash, $role_id, $profile);
-
-        $_SESSION['success'] = "User '$username' created successfully!";
-        header("Location: userManager.php"); // avoid resubmission
+    if ($UserModel->userExists($username, $email)) {
+        echo "Username or Email already taken!";
         exit;
+    }
 
-    } catch (Exception $e) {
-        $_SESSION['error'] = $e->getMessage();
-        header("Location: userManager.php");
-        exit;
+    $uploadDir = $_SERVER['DOCUMENT_ROOT'] . '/ticketing/ticketing_system/uploads/profile/';
+
+    // 1️⃣ Ensure folder exists and is writable
+    if (!is_dir($uploadDir)) {
+        if (!mkdir($uploadDir, 0755, true)) {
+            die('Failed to create upload directory. Check folder permissions!');
+        }
+    }
+
+    // 2️⃣ Initialize profile variable
+    $profile = 'default.png'; // default profile image if none uploaded
+
+    // 3️⃣ Handle file upload
+    if (isset($_FILES['profile']) && $_FILES['profile']['error'] === UPLOAD_ERR_OK) {
+        $filename = time() . '_' . basename($_FILES['profile']['name']);
+        $destination = $uploadDir . $filename;
+
+        // Move uploaded file
+        if (!move_uploaded_file($_FILES['profile']['tmp_name'], $destination)) {
+            die('Failed to move uploaded file. Check folder permissions!');
+        }
+
+        // Set URL to the uploaded file
+        $profile = '/ticketing/ticketing_system/uploads/profile/' . $filename;
+    }
+
+    // 4️⃣ Create user in database
+    $UserModel->createUser($username, $email, $password, $role_id, $profile);
+
+    echo "User created successfully!";
+}
+
+if (isset($_POST['deleteUserById'])) {
+
+    $user_id = intval($_POST['user_id']);
+
+    var_dump($_POST['deleteUserById']);
+
+    if ($UserModel->deleteUserById($user_id)) {
+        echo "<script>alert('User deleted successfully'); window.location.href='userManager.php';</script>";
+    } else {
+        echo "<script>alert('Failed to delete user');</script>";
     }
 }
 
-// Fetch all users for display (optional)
-$users = $userModel->getAllUsers();
-$totalUsers = count($users);
+
+
+
 ?>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
     + Add User
 </button>
@@ -111,7 +107,7 @@ $totalUsers = count($users);
                     <?php unset($_SESSION['success']); ?>
                 <?php endif; ?>
 
-                <form method="POST" enctype="multipart/form-data">
+                <form method="POST" action="<?php echo $_SERVER['PHP_SELF']; ?>" enctype="multipart/form-data">
 
                     <div class="mb-3">
                         <label class="form-label">Username</label>
@@ -175,23 +171,29 @@ $totalUsers = count($users);
             <?php foreach ($Users as $user): ?>
                 <tr>
                     <td>
-                        <img src="<?= htmlspecialchars($user['profile']) ?>" alt="" width="80" height="80"
+                        <img src="<?= !empty($user['profile']) ? htmlspecialchars($user['profile']) : 'uploads/profile/default.png'; ?>"
+                            alt="<?= htmlspecialchars($user['user_name']) ?>" width="80" height="80"
                             style="object-fit:cover; border-radius:5px;">
                     </td>
                     <td><?= htmlspecialchars($user['user_name']) ?></td>
                     <td><?= htmlspecialchars($user['email']) ?></td>
                     <td><?= htmlspecialchars($user['role_name']) ?></td>
                     <td><?= htmlspecialchars($user['created_at']) ?></td>
+
                     <td>
-                        <a href="UpdateUsers.php?user_id=<?= $user['user_id'] ?>"
+                        <a href="updateUser.php?user_id=<?= $user['user_id'] ?>"
                             class="btn btn-default btn-sm btn-icon icon-left">
                             <i class="entypo-pencil"></i> Edit
                         </a>
-                        <form method="POST" style="display:inline;">
+                        <form method="POST" style="display:inline;"
+                            onsubmit="return confirm('Are you sure you want to delete this user?');">
+
                             <input type="hidden" name="user_id" value="<?= $user['user_id'] ?>">
-                            <button type="submit" class="btn btn-danger btn-sm btn-icon icon-left" name="deleteUserById">
-                                <i class="entypo-cancel"></i> Delete
+
+                            <button type="submit" class="btn btn-danger btn-sm" name="deleteUserById">
+                                Delete
                             </button>
+
                         </form>
                     </td>
                 </tr>
@@ -209,6 +211,13 @@ $totalUsers = count($users);
 
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<?php if (!empty($_SESSION['error'])): ?>
+    <script>
+        var addUserModal = new bootstrap.Modal(document.getElementById('addUserModal'));
+        addUserModal.show();
+    </script>
+<?php endif; ?>
 </body>
 
 </html>

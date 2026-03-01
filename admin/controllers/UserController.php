@@ -3,15 +3,11 @@
 require_once __DIR__ . '/../config/connection.php';  // defines $pdo
 require_once __DIR__ . '/../models/UserModel.php';
 require_once __DIR__ . '/../helpers/functions.php';
-// Now $pdo exists, so you can pass it to UserModel
+
 $UserModel = new UserModel($pdo);
 
-
-
-
-$users = $UserModel->getAllUsers();
+$users = $UserModel->getAllUsers() ?? [];
 $totalUsers = count($users);
-$users = $UserModel->getAllUsers();
 
 $agents = $pdo->query(
     "SELECT user_id, user_name 
@@ -40,33 +36,19 @@ if (!isset($userModel)) {
     return; // stop execution if loaded too early
 }
 
-/* =========================
-   USER DATA
-========================= */
-
-$users = $userModel->getAllUsers();
-$totalUsers = count($users);
-$users = $userModel->getAllUsers();
-
-$agents = $pdo->query(
-    "SELECT user_id, user_name 
-     FROM users 
-     WHERE role_id = 'agent'"
-)->fetchAll(PDO::FETCH_ASSOC);
-
-$totalUsers = count($users);
 
 
 
-if (isset($_POST['createUser'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['createUser'])) {
+
+    $username = trim($_POST['username'] ?? '');
+    $email    = trim($_POST['email'] ?? '');
+    $password = $_POST['password'] ?? '';
+    $role_id  = (int) ($_POST['role_id'] ?? 0);
 
     try {
-        $username = trim($_POST['username'] ?? '');
-        $email    = trim($_POST['email'] ?? '');
-        $passwordRaw = $_POST['password'] ?? '';
-        $role_id  = (int)($_POST['role_id'] ?? 0);
-
-        if ($username === '' || $email === '' || $passwordRaw === '' || $role_id <= 0) {
+        // --- Validation ---
+        if ($username === '' || $email === '' || $password === '' || $role_id <= 0) {
             throw new Exception("All fields are required.");
         }
 
@@ -74,37 +56,45 @@ if (isset($_POST['createUser'])) {
             throw new Exception("Invalid email format.");
         }
 
-        if ($userModel->userExists($username, $email)) {
-            throw new Exception("Username or Email already taken.");
-        }
+        // --- Hash the password ---
+        $passwordHash = password_hash($password, PASSWORD_DEFAULT);
 
-        $password = password_hash($passwordRaw, PASSWORD_DEFAULT);
-
-        // Handle profile upload
+        // --- Handle profile image ---
         $profile = null;
-        $uploadDir = __DIR__ . '/uploads/profile/';
-        if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
+        if (!empty($_FILES['profile']['name']) && $_FILES['profile']['error'] === 0) {
 
-        if (!empty($_FILES['profile']['name'])) {
-            $allowedTypes = ['image/jpeg','image/png','image/gif'];
-            if (!in_array($_FILES['profile']['type'], $allowedTypes)) {
-                throw new Exception("Only JPG, PNG, GIF allowed.");
+            $uploadDir = __DIR__ . '/../../users/'; // outside controllers folder
+
+            // Create folder if missing
+            if (!is_dir($uploadDir)) {
+                if (!mkdir($uploadDir, 0755, true) && !is_dir($uploadDir)) {
+                    throw new Exception("Failed to create upload directory: $uploadDir");
+                }
             }
 
-            $filename = time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $_FILES['profile']['name']);
-            $destination = $uploadDir . $filename;
+            // Validate file type
+            $ext = strtolower(pathinfo($_FILES['profile']['name'], PATHINFO_EXTENSION));
+            $allowed = ['jpg','jpeg','png','gif'];
+            if (!in_array($ext, $allowed)) {
+                throw new Exception("Invalid file type. Allowed: " . implode(', ', $allowed));
+            }
+
+            $fileName = uniqid('user_') . '.' . $ext;
+            $destination = $uploadDir . $fileName;
+
             if (!move_uploaded_file($_FILES['profile']['tmp_name'], $destination)) {
-                throw new Exception("Upload failed.");
+                throw new Exception("Failed to move uploaded file.");
             }
 
-            $profile = "uploads/profile/" . $filename;
+            // Store relative path in DB
+            $profile = 'uploads/users/' . $fileName;
         }
 
-        // ✅ Now variables are guaranteed to exist and be valid
-        $userModel->createUser($username, $email, $password, $role_id, $profile);
+        // --- Insert user into DB ---
+        $userModel->createUser($username, $email, $passwordHash, $role_id, $profile);
 
         $_SESSION['success'] = "User created successfully!";
-        header("Location: userManager.php"); // reload to avoid resubmission
+        header("Location: userManager.php");
         exit;
 
     } catch (Exception $e) {
@@ -137,7 +127,7 @@ if (isset($_FILES['profile']) && $_FILES['profile']['error'] === UPLOAD_ERR_OK) 
         die('Failed to move uploaded file. Check folder permissions.');
     }
 
-    $profile = "http://localhost/ticketing-system/uploads/profile/" . $filename;
+    $profile = "http://localhost/ticketing/ticketing-system/uploads/profile/" . $filename;
 }
 
 
@@ -147,26 +137,43 @@ if (isset($_FILES['profile']) && $_FILES['profile']['error'] === UPLOAD_ERR_OK) 
 }
 
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['deleteUserById'])) {
 
-if (isset($_POST['deleteUserById'])) {
+    $userId = (int)($_POST['user_id'] ?? 0);
 
-    $user_id = (int) $_POST['user_id'];
+    if ($userId > 0) {
 
-    if ($userModel->deleteUserById($user_id)) {
-        echo "<script>
-            alert('User deleted successfully');
-            window.location.href='userManager.php';
-        </script>";
-        exit;
+        try {
+
+            // Optional: fetch profile image first (to delete file)
+            $user = $userModel->getUserById($userId);
+
+            if ($user && !empty($user['profile_image']) && file_exists($user['profile_image'])) {
+                unlink($user['profile_image']); // delete image file
+            }
+
+            $userModel->deleteUserById($userId);
+
+            $_SESSION['success'] = "User deleted successfully.";
+
+        } catch (Exception $e) {
+            $_SESSION['error'] = "Failed to delete user.";
+        }
+
     } else {
-        echo "<script>alert('Failed to delete user');</script>";
+        $_SESSION['error'] = "Invalid user ID.";
     }
+
+    header("Location: userManager.php");
+    exit;
 }
 
 if (isset($_GET['user_id'])) {
     $user_id = $_GET['user_id'];
     $user = $UserModel->getUserById($user_id);
 }
+
+
 
 
 
@@ -185,15 +192,10 @@ if (isset($_POST['updateUser'])) {
 
     $profile = $oldUser['profile'];
 
-
-    $uploadDir = dirname(__DIR__, 3) . '/uploads/profile/';
-
+      $uploadDir = __DIR__ . '/../../uploads/profile/';
     if (!is_dir($uploadDir)) {
-    if (!mkdir($uploadDir, 0777, true)) {
-        die('❌ Failed to create upload directory');
+        mkdir($uploadDir, 0755, true); // create if missing
     }
-}
-
 
 
 
@@ -219,93 +221,13 @@ if (isset($_POST['updateUser'])) {
     );
 
     if ($updated) {
-        header("Location: userManager.php?updated=1");
+        header("Location: usersManager.php?updated=1");
         exit;
     } else {
         echo "Failed to update user.";
     }
 }
 
-if (isset($_POST['createUser'])) {
-    $username = trim($_POST['name']);
-    $email    = trim($_POST['email']);
-    $password = $_POST['password'];
-    $role     = (int) $_POST['role_id'];
 
-    // Handle profile image upload
-    $profileImage = 'uploads/users/default.png'; // default image
-    if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error'] === 0) {
-        $ext = pathinfo($_FILES['profile_image']['name'], PATHINFO_EXTENSION);
-        $allowed = ['jpg', 'jpeg', 'png', 'gif'];
-
-        if (in_array(strtolower($ext), $allowed)) {
-            $newFileName = uniqid('user_') . '.' . $ext;
-            $uploadDir = __DIR__ . '/uploads/users/';
-            if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
-
-            $destination = $uploadDir . $newFileName;
-            if (move_uploaded_file($_FILES['profile_image']['tmp_name'], $destination)) {
-                $profileImage = 'uploads/users/' . $newFileName;
-            }
-        }
-    }
-
-
-    if ($userModel->userExists($username, $email)) {
-        $error = "Username '$username' is already taken!";
-    } elseif ($userModel->emailExists($email)) {
-        $error = "Email '$email' is already registered!";
-    } else {
-        // Use registerUser to insert safely
-        try {
-            $userModel->registerUser($username, $email, $password, $role, $profileImage);
-            header("Location: users.php");
-            exit;
-        } catch (PDOException $e) {
-            $error = "Database error: " . $e->getMessage();
-        }
-    }
-}
-
-if (isset($_POST['createUser'])) {
-    $username = trim($_POST['name']);
-    $email    = trim($_POST['email']);
-    $password = $_POST['password'];
-    $role     = (int) $_POST['role_id'];
-
-    // Handle profile image upload
-    $profileImage = 'uploads/users/default.png'; // default image
-    if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error'] === 0) {
-        $ext = pathinfo($_FILES['profile_image']['name'], PATHINFO_EXTENSION);
-        $allowed = ['jpg', 'jpeg', 'png', 'gif'];
-
-        if (in_array(strtolower($ext), $allowed)) {
-            $newFileName = uniqid('user_') . '.' . $ext;
-            $uploadDir = __DIR__ . '/uploads/users/';
-            if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
-
-            $destination = $uploadDir . $newFileName;
-            if (move_uploaded_file($_FILES['profile_image']['tmp_name'], $destination)) {
-                $profileImage = 'uploads/users/' . $newFileName;
-            }
-        }
-    }
-
-
-    if ($userModel->userExists($username, $email)) {
-        $error = "Username '$username' is already taken!";
-    } elseif ($userModel->emailExists($email)) {
-        $error = "Email '$email' is already registered!";
-    } else {
-        // Use registerUser to insert safely
-        try {
-            $userModel->registerUser($username, $email, $password, $role, $profileImage);
-            header("Location: users.php");
-            exit;
-        } catch (PDOException $e) {
-            $error = "Database error: " . $e->getMessage();
-        }
-    }
-}
 
 

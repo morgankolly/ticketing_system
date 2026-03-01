@@ -50,7 +50,6 @@ $agents = $agentsStmt->fetchAll(PDO::FETCH_ASSOC);
                         <th>Status</th>
                         <th>Category</th>
                         <th>Created At</th>
-                        <th>Priority</th>
                         <th>Assign To</th>
                     </tr>
                 </thead>
@@ -65,13 +64,6 @@ $agents = $agentsStmt->fetchAll(PDO::FETCH_ASSOC);
                             <td><?= htmlspecialchars($ticket['status']) ?></td>
                             <td><?= htmlspecialchars($ticket['category_name']) ?></td>
                             <td><?= $ticket['created_at'] ?></td>  
-                          <td>
-    <?php
-    // Define ENUM values (or fetch dynamically — shown below)
-    $priorities = ['low', 'medium', 'high', 'urgent'];
-    ?>
-
-</td>
                             <td>
                                <form method="POST" action="" class="d-flex gap-2">
     <input type="hidden" name="ticket_ref" value="<?= htmlspecialchars($ticket['reference']) ?>">
@@ -88,7 +80,10 @@ $agents = $agentsStmt->fetchAll(PDO::FETCH_ASSOC);
 
     <select name="priority" class="form-select" required>
         <option value="">Priority</option>
-
+ <?php
+    // Define ENUM values (or fetch dynamically — shown below)
+    $priorities = ['low', 'medium', 'high', 'urgent'];
+    ?>
         <?php foreach ($priorities as $p): ?>
             <option value="<?= $p ?>"
                 <?= (strtolower($ticket['priority'] ?? '') === $p) ? 'selected' : '' ?>>

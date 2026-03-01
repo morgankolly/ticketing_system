@@ -6,6 +6,7 @@ ini_set('display_errors', 1);
 require_once __DIR__ . '/config/connection.php'; // Make sure this works
 require_once __DIR__ . '/models/TicketModel.php';
 require_once __DIR__ . '/compents/agentHeader.php';
+$reference = trim($_GET['reference'] ?? '');
 $TicketModel = new TicketModel($pdo);
 $UserModel = new UserModel($pdo);
 $agentId = $_SESSION['user_id'];

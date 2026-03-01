@@ -7,7 +7,6 @@ include_once __DIR__. '/../models/UserModel.php';
 include_once __DIR__. '/../models/CategoryModel.php';
 include_once __DIR__. '/../models/TicketModel.php';
 include_once __DIR__. '/../models/RoleModel.php';
-
 include_once __DIR__. '/../models/ContactModel.php';
 
 

@@ -17,48 +17,69 @@ require __DIR__ . '/../../vendor/autoload.php';
 Dotenv\Dotenv::createImmutable(__DIR__ . '/../../')->load();
 require_once __DIR__ . '/../config/connection.php';
 
+
 if (!function_exists('sendemail')) {
-    function sendemail($email, $name, $subject, $body, $headers = [])
-    {
-        $mail = new PHPMailer(true);
+   function sendemail(
+    $email,
+    $name,
+    $subject,
+    $body,
+    $messageId = null,
+    $inReplyTo = null,
+    $references = null  // Added references parameter for better threading
+) {
+    $mail = new PHPMailer(true);
 
-        try {
-            // Server settings
-            $mail->isSMTP();
-            $mail->Host       = 'smtp.gmail.com';
-            $mail->SMTPAuth   = true;
-            $mail->Username   = $_ENV['MAIL_USERNAME'];
-            $mail->Password   = $_ENV['MAIL_PASSWORD'];
-            $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS; // SSL
-            $mail->Port       = 465;
+    try {
+        // SMTP Configuration
+        $mail->isSMTP();
+        $mail->Host = 'smtp.gmail.com';
+        $mail->SMTPAuth = true;
+        $mail->Username = $_ENV['MAIL_USERNAME'];
+        $mail->Password = $_ENV['MAIL_PASSWORD'];
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+        $mail->Port = 465;
 
-            // Recipients
-            $mail->setFrom($_ENV['MAIL_USERNAME'], 'Morgan Kolly Ticketing System');
-            $mail->addAddress($email, $name);
+        // Sender & Recipient
+        $mail->setFrom($_ENV['MAIL_USERNAME'], 'Morgan Kolly Ticketing System');
+        $mail->addAddress($email, $name);
 
-            // Content
-            $mail->isHTML(true);
-            $mail->Subject = $subject;
-            $mail->Body    = $body;
-
-            // Custom headers (Message-ID, In-Reply-To, References)
-            foreach ($headers as $key => $value) {
-                $mail->addCustomHeader($key, $value);
-            }
-
-            if ($mail->send()) {
-                return true;   // ✅ IMPORTANT
-            } else {
-                return false;  // ✅ IMPORTANT
-            }
-
-        } catch (Exception $e) {
-            error_log("Mailer Error: " . $mail->ErrorInfo);
-            return false; // ✅ IMPORTANT
+        // Handle subject if it's an array (safety check)
+        if (is_array($subject)) {
+            $subject = implode(' ', $subject);
         }
+        $mail->Subject = $subject;
+        
+        // Content
+        $mail->isHTML(true);
+        $mail->Body = $body;
+
+        // ✅ MESSAGE-ID HEADER (for all emails)
+        if ($messageId) {
+            $mail->MessageID = $messageId;
+        }
+
+        // ✅ THREADING HEADERS (for replies)
+        if ($inReplyTo) {
+            $mail->addCustomHeader('In-Reply-To', $inReplyTo);
+            
+            // Set References header - either use provided references or fallback to inReplyTo
+            if ($references) {
+                $mail->addCustomHeader('References', $references);
+            } else {
+                $mail->addCustomHeader('References', $inReplyTo);
+            }
+        }
+
+        return $mail->send();
+
+    } catch (Exception $e) {
+        error_log("Mailer Error: " . $mail->ErrorInfo);
+        return false;
     }
 }
-    
+}
+
 
 if (!function_exists('sendnotification')) {
     function sendnotification($subject, $email, $body)
@@ -134,7 +155,8 @@ function displayComments(array $comments)
     <?php endforeach;
 }
 
-function fetchUserReplies(PDO $pdo) {
+function fetchUserReplies(PDO $pdo)
+{
     // --- Connect to Gmail via IMAP ---
     $mailbox = '{imap.gmail.com:993/imap/ssl}INBOX';
     $username = 'morgankolly5@gmail.com';
@@ -157,7 +179,7 @@ function fetchUserReplies(PDO $pdo) {
 
     foreach ($emails as $emailNumber) {
         $overview = imap_fetch_overview($inbox, $emailNumber, 0)[0];
-        $message  = imap_fetchbody($inbox, $emailNumber, 1.1);
+        $message = imap_fetchbody($inbox, $emailNumber, 1.1);
 
         if (!$message) {
             $message = imap_fetchbody($inbox, $emailNumber, 1);
@@ -185,37 +207,69 @@ function fetchUserReplies(PDO $pdo) {
     imap_close($inbox);
 }
 
-function decodeHtmlEnt($str) {
+function decodeHtmlEnt($str)
+{
     $ret = html_entity_decode($str, ENT_COMPAT, 'UTF-8');
     $p2 = -1;
-    for(;;) {
-        $p = strpos($ret, '&#', $p2+1);
+    for (; ; ) {
+        $p = strpos($ret, '&#', $p2 + 1);
         if ($p === FALSE)
             break;
         $p2 = strpos($ret, ';', $p);
         if ($p2 === FALSE)
             break;
-            
-        if (substr($ret, $p+2, 1) == 'x')
-            $char = hexdec(substr($ret, $p+3, $p2-$p-3));
+
+        if (substr($ret, $p + 2, 1) == 'x')
+            $char = hexdec(substr($ret, $p + 3, $p2 - $p - 3));
         else
-            $char = intval(substr($ret, $p+2, $p2-$p-2));
-            
+            $char = intval(substr($ret, $p + 2, $p2 - $p - 2));
+
         //echo "$char\n";
         $newchar = iconv(
-            'UCS-4', 'UTF-8',
-            chr(($char>>24)&0xFF).chr(($char>>16)&0xFF).chr(($char>>8)&0xFF).chr($char&0xFF) 
+            'UCS-4',
+            'UTF-8',
+            chr(($char >> 24) & 0xFF) . chr(($char >> 16) & 0xFF) . chr(($char >> 8) & 0xFF) . chr($char & 0xFF)
         );
         //echo "$newchar<$p<$p2<<\n";
-        $ret = substr_replace($ret, $newchar, $p, 1+$p2-$p);
+        $ret = substr_replace($ret, $newchar, $p, 1 + $p2 - $p);
         $p2 = $p + strlen($newchar);
     }
     return $ret;
 }
-function cleanEmailContent($html) {
+function cleanEmailContent($html)
+{
     $text = decodeHtmlEnt($html);   // decode entities
     $text = strip_tags($text);      // remove all HTML
     $text = trim($text);
     return $text;
+}
+function processIncomingEmail($rawEmailContent) {
+    
+    // Extract the plain text part or clean HTML
+    $cleanBody = cleanEmailContent($rawEmailContent);
+    
+    // Remove email signatures and reply quotes (optional)
+    $cleanBody = removeEmailQuotes($cleanBody);
+    
+    // Store in database
+    return $cleanBody;
+}
+
+
+
+function removeEmailQuotes($content) {
+    // Remove common email quote patterns
+    $patterns = [
+        '/On.*wrote:.*$/s',     // Remove "On [date] wrote:"
+        '/>.*$/m',              // Remove quoted lines starting with >
+        '/---* Forwarded message ---*.*$/s', // Remove forwarded message
+        '/Sent from my.*$/i'     // Remove mobile signatures
+    ];
+    
+    foreach ($patterns as $pattern) {
+        $content = preg_replace($pattern, '', $content);
+    }
+    
+    return trim($content);
 }
 ?>
