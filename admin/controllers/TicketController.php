@@ -4,7 +4,6 @@
 require_once __DIR__ . '/../models/TicketModel.php';
 require_once __DIR__ . '/../models/UserModel.php';
 require_once __DIR__ . '/../helpers/functions.php';
-;
 require_once __DIR__ . '/../models/notificationModel.php';
 $TicketModel = new TicketModel($pdo);
 $UserModel = new UserModel($pdo);

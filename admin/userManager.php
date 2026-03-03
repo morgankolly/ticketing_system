@@ -1,21 +1,20 @@
 <?php
+
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
+require_once  'config/connection.php';
+require_once  'compents/header.php';
+require_once  'helpers/functions.php';
+require_once  'controllers/UserController.php';
+require_once  'models/UserModel.php';
+require_once  'models/RoleModel.php';
 
-
-require_once 'config/connection.php';
-require_once 'compents/header.php';
-require_once 'helpers/functions.php';
-require_once 'controllers/UserController.php';
-require_once 'models/UserModel.php';
-require_once 'models/RoleModel.php';
 $userModel = new UserModel($pdo);
 $roleModel = new RoleModel($pdo);
+
 $roles = $roleModel->getRoles();
 $users = $userModel->getAllUsers();
 $totalUsers = count($users);
-
 
 if (isset($_POST['createUser'])) {
 
@@ -59,29 +58,23 @@ if (isset($_POST['createUser'])) {
     $UserModel->createUser($username, $email, $password, $role_id, $profile);
 
     echo "User created successfully!";
+     
+    
 }
-
-if (isset($_POST['deleteUserById'])) {
-
-    $user_id = intval($_POST['user_id']);
-
-    var_dump($_POST['deleteUserById']);
-
-    if ($UserModel->deleteUserById($user_id)) {
-        echo "<script>alert('User deleted successfully'); window.location.href='userManager.php';</script>";
-    } else {
-        echo "<script>alert('Failed to delete user');</script>";
-    }
-}
-
-
-
-
 ?>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
-    + Add User
-</button>
+<link href="assets/css/custom.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<div class="container-fluid p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0" style="color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <strong>User</strong> Management
+        </h1>
+        <button type="button" class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#addUserModal">
+            <i class="align-middle" data-feather="user-plus"></i> Add New User
+        </button>
+    </div>
 
 <div class="modal fade" id="addUserModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -153,8 +146,13 @@ if (isset($_POST['deleteUserById'])) {
 </div>
 
 
-<h2>Users List</h2>
-<table class="table table-bordered table-striped">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Users List (<?= $totalUsers ?> total)</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
     <thead>
         <tr>
             <th>Profile</th>
@@ -166,9 +164,9 @@ if (isset($_POST['deleteUserById'])) {
         </tr>
     </thead>
 
-    <tbody>
-        <?php if (!empty($Users)): ?>
-            <?php foreach ($Users as $user): ?>
+<tbody>
+        <?php if (!empty($users)): ?>
+            <?php foreach ($users as $user): ?>
                 <tr>
                     <td>
                         <img src="<?= !empty($user['profile']) ? htmlspecialchars($user['profile']) : 'uploads/profile/default.png'; ?>"
@@ -181,20 +179,19 @@ if (isset($_POST['deleteUserById'])) {
                     <td><?= htmlspecialchars($user['created_at']) ?></td>
 
                     <td>
-                        <a href="updateUser.php?user_id=<?= $user['user_id'] ?>"
-                            class="btn btn-default btn-sm btn-icon icon-left">
-                            <i class="entypo-pencil"></i> Edit
-                        </a>
-                        <form method="POST" style="display:inline;"
-                            onsubmit="return confirm('Are you sure you want to delete this user?');">
-
-                            <input type="hidden" name="user_id" value="<?= $user['user_id'] ?>">
-
-                            <button type="submit" class="btn btn-danger btn-sm" name="deleteUserById">
-                                Delete
-                            </button>
-
-                        </form>
+                        <div class="d-flex gap-2">
+                            <a href="UpdateUser.php?user_id=<?= $user['user_id'] ?>"
+                                class="btn btn-primary btn-sm">
+                                <i class="align-middle" data-feather="edit-2"></i> Edit
+                            </a>
+                            <form method="POST" style="display:inline;"
+                                onsubmit="return confirm('Are you sure you want to delete this user?');">
+                                <input type="hidden" name="user_id" value="<?= $user['user_id'] ?>">
+                                <button type="submit" class="btn btn-danger btn-sm" name="deleteUserById">
+                                    <i class="align-middle" data-feather="trash-2"></i> Delete
+                                </button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
             <?php endforeach; ?>
@@ -206,11 +203,14 @@ if (isset($_POST['deleteUserById'])) {
 
 
 
-    </tbody>
-</table>
-
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/app.js"></script>
 
 <?php if (!empty($_SESSION['error'])): ?>
     <script>

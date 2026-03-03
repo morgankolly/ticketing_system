@@ -5,40 +5,38 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 
  include_once __DIR__ . '/compents/agentHeader.php'; 
+require_once __DIR__ . '/config/connection.php';
+require_once __DIR__ . '/models/TicketModel.php';
+require_once __DIR__ . '/models/UserModel.php';
 
+
+$ticketModel = new TicketModel($pdo);
+$userModel = new UserModel($pdo);
+$agentId = $_SESSION['user_id'] ?? null;
+
+// Get agent's assigned tickets
+$assignedTickets = $ticketModel->getAssignedTickets($agentId);
+
+// Calculate stats
+$totalAssigned = count($assignedTickets);
+$openTickets = count(array_filter($assignedTickets, fn($t) => strtolower($t['status']) === 'open'));
+$inProgressTickets = count(array_filter($assignedTickets, fn($t) => strtolower($t['status']) === 'in_progress' || strtolower($t['status']) === 'in progress'));
+$resolvedTickets = count(array_filter($assignedTickets, fn($t) => strtolower($t['status']) === 'resolved'));
+$closedTickets = count(array_filter($assignedTickets, fn($t) => strtolower($t['status']) === 'closed'));
+
+// Get agent info
+$agent = $userModel->getUserById($agentId);
 ?>
-
-
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-	<meta charset="utf-8">
-	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-	<meta name="description" content="Responsive Admin &amp; Dashboard Template based on Bootstrap 5">
-	<meta name="author" content="AdminKit">
-	<meta name="keywords"
-		content="adminkit, bootstrap, bootstrap 5, admin, dashboard, template, responsive, css, sass, html, theme, front-end, ui kit, web">
-
-	<link rel="preconnect" href="https://fonts.gstatic.com">
-	<link rel="shortcut icon" href="img/icons/icon-48x48.png" />
-
-	<link rel="canonical" href="https://demo-basic.adminkit.io/" />
-
-	<title>Ticketing System</title>
-
-	<link href="assets/css/app.css" rel="stylesheet">
-	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
-</head>
-
-<body>
-	
 
 			<main class="content">
 				<div class="container-fluid p-0">
 
-					<h1 class="h3 mb-3"><strong>Analytics</strong> Dashboard</h1>
+					<h1 class="h3 mb-3" style="color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+						<strong>Agent</strong> Dashboard
+						<?php if ($agent): ?>
+							<small class="text-white-50">- Welcome, <?= htmlspecialchars($agent['user_name']) ?>!</small>
+						<?php endif; ?>
+					</h1>
 
 					<div class="row">
 						<div class="col-xl-6 col-xxl-5 d-flex">
@@ -49,42 +47,30 @@ ini_set('display_startup_errors', 1);
 											<div class="card-body">
 												<div class="row">
 													<div class="col mt-0">
-														<h5 class="card-title">Sales</h5>
+														<h5 class="card-title">Total Assigned</h5>
 													</div>
-
 													<div class="col-auto">
 														<div class="stat text-primary">
-															<i class="align-middle" data-feather="truck"></i>
+															<i class="align-middle" data-feather="inbox"></i>
 														</div>
 													</div>
 												</div>
-												<h1 class="mt-1 mb-3">2.382</h1>
-												<div class="mb-0">
-													<span class="text-danger"> <i
-															class="mdi mdi-arrow-bottom-right"></i> -3.65% </span>
-													<span class="text-muted">Since last week</span>
-												</div>
+												<h1 class="mt-1 mb-3"><?= $totalAssigned ?></h1>
 											</div>
 										</div>
 										<div class="card">
 											<div class="card-body">
 												<div class="row">
 													<div class="col mt-0">
-														<h5 class="card-title">Visitors</h5>
+														<h5 class="card-title">Open Tickets</h5>
 													</div>
-
 													<div class="col-auto">
 														<div class="stat text-primary">
-															<i class="align-middle" data-feather="users"></i>
+															<i class="align-middle" data-feather="alert-circle"></i>
 														</div>
 													</div>
 												</div>
-												<h1 class="mt-1 mb-3">14.212</h1>
-												<div class="mb-0">
-													<span class="text-success"> <i
-															class="mdi mdi-arrow-bottom-right"></i> 5.25% </span>
-													<span class="text-muted">Since last week</span>
-												</div>
+												<h1 class="mt-1 mb-3"><?= $openTickets ?></h1>
 											</div>
 										</div>
 									</div>
@@ -93,42 +79,30 @@ ini_set('display_startup_errors', 1);
 											<div class="card-body">
 												<div class="row">
 													<div class="col mt-0">
-														<h5 class="card-title">Earnings</h5>
+														<h5 class="card-title">In Progress</h5>
 													</div>
-
 													<div class="col-auto">
 														<div class="stat text-primary">
-															<i class="align-middle" data-feather="dollar-sign"></i>
+															<i class="align-middle" data-feather="clock"></i>
 														</div>
 													</div>
 												</div>
-												<h1 class="mt-1 mb-3">$21.300</h1>
-												<div class="mb-0">
-													<span class="text-success"> <i
-															class="mdi mdi-arrow-bottom-right"></i> 6.65% </span>
-													<span class="text-muted">Since last week</span>
-												</div>
+												<h1 class="mt-1 mb-3"><?= $inProgressTickets ?></h1>
 											</div>
 										</div>
 										<div class="card">
 											<div class="card-body">
 												<div class="row">
 													<div class="col mt-0">
-														<h5 class="card-title">Orders</h5>
+														<h5 class="card-title">Resolved</h5>
 													</div>
-
 													<div class="col-auto">
 														<div class="stat text-primary">
-															<i class="align-middle" data-feather="shopping-cart"></i>
+															<i class="align-middle" data-feather="check-circle"></i>
 														</div>
 													</div>
 												</div>
-												<h1 class="mt-1 mb-3">64</h1>
-												<div class="mb-0">
-													<span class="text-danger"> <i
-															class="mdi mdi-arrow-bottom-right"></i> -2.25% </span>
-													<span class="text-muted">Since last week</span>
-												</div>
+												<h1 class="mt-1 mb-3"><?= $resolvedTickets ?></h1>
 											</div>
 										</div>
 									</div>
@@ -139,13 +113,25 @@ ini_set('display_startup_errors', 1);
 						<div class="col-xl-6 col-xxl-7">
 							<div class="card flex-fill w-100">
 								<div class="card-header">
-
-									<h5 class="card-title mb-0">Recent Movement</h5>
+									<h5 class="card-title mb-0">My Tickets Status</h5>
 								</div>
 								<div class="card-body py-3">
-									<div class="chart chart-sm">
-										<canvas id="chartjs-dashboard-line"></canvas>
-									</div>
+									<?php 
+									$statusData = [
+										['status' => 'Open', 'total' => $openTickets],
+										['status' => 'In Progress', 'total' => $inProgressTickets],
+										['status' => 'Resolved', 'total' => $resolvedTickets],
+										['status' => 'Closed', 'total' => $closedTickets]
+									];
+									$statusData = array_filter($statusData, fn($s) => $s['total'] > 0);
+									?>
+									<?php if (!empty($statusData)): ?>
+										<div class="chart chart-sm">
+											<canvas id="agentStatusPieChart"></canvas>
+										</div>
+									<?php else: ?>
+										<p class="text-center text-muted mb-0">No tickets assigned yet.</p>
+									<?php endif; ?>
 								</div>
 							</div>
 						</div>
@@ -236,8 +222,6 @@ ini_set('display_startup_errors', 1);
 							</div>
 
 			</main>
-
-			<footer class="footer">
 				<div class="container-fluid">
 					<div class="row text-muted">
 						<div class="col-6 text-start">
@@ -270,10 +254,78 @@ ini_set('display_startup_errors', 1);
 		</div>
 	</div>
 
+	<!-- Chart.js CDN -->
+	<script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
 	<script src="js/app.js"></script>
 
+	<script>
+		document.addEventListener('DOMContentLoaded', function() {
+			<?php if (!empty($statusData)): ?>
+			if (typeof Chart === 'undefined') {
+				console.error('Chart.js is not loaded');
+				return;
+			}
+			
+			const statusData = <?= json_encode(array_values($statusData)) ?>;
+			const statusLabels = statusData.map(item => item.status);
+			const statusCounts = statusData.map(item => parseInt(item.total));
+			
+			const statusColors = {
+				'open': '#3b82f6',
+				'in-progress': '#f59e0b',
+				'resolved': '#10b981',
+				'closed': '#6b7280'
+			};
+			
+			const backgroundColors = statusLabels.map(status => {
+				const normalizedStatus = status.toLowerCase().replace(/\s+/g, '-');
+				return statusColors[normalizedStatus] || '#8b5cf6';
+			});
+			
+			const ctx = document.getElementById('agentStatusPieChart');
+			if (ctx) {
+				new Chart(ctx, {
+					type: 'pie',
+					data: {
+						labels: statusLabels,
+						datasets: [{
+							data: statusCounts,
+							backgroundColor: backgroundColors,
+							borderColor: '#ffffff',
+							borderWidth: 2
+						}]
+					},
+					options: {
+						responsive: true,
+						maintainAspectRatio: true,
+						legend: {
+							position: 'bottom',
+							labels: {
+								padding: 15,
+								usePointStyle: true
+							}
+						},
+						tooltips: {
+							callbacks: {
+								label: function(tooltipItem, data) {
+									const label = data.labels[tooltipItem.index] || '';
+									const value = data.datasets[0].data[tooltipItem.index];
+									const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
+									const percentage = ((value / total) * 100).toFixed(1);
+									return label + ': ' + value + ' (' + percentage + '%)';
+								}
+							}
+						}
+					}
+				});
+			}
+			<?php endif; ?>
+		});
+	</script>
 
 </body>
+</html>
+
 
 </html>
 

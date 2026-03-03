@@ -1,8 +1,13 @@
 <?php
- 
-require_once __DIR__ . '/../config/connection.php';  // defines $pdo
+
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+require_once __DIR__ . '/../config/connection.php';
+ require_once __DIR__ . '/../models/TicketModel.php';
 require_once __DIR__ . '/../models/UserModel.php';
 require_once __DIR__ . '/../helpers/functions.php';
+
 
 $UserModel = new UserModel($pdo);
 
@@ -17,10 +22,6 @@ $agents = $pdo->query(
 
 $totalUsers = count($users);
 
-
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['getAllUsers'])) {
     $username = $_POST['user_name'] ?? '';
     $email = $_POST['email'] ?? '';
@@ -38,71 +39,66 @@ if (!isset($userModel)) {
 
 
 
+if (isset($_POST['createUser'])) {
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['createUser'])) {
+    $username = trim($_POST['username']);
+    $email = trim($_POST['email']);
+    $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
+    $role_id = $_POST['role_id'];
 
-    $username = trim($_POST['username'] ?? '');
-    $email    = trim($_POST['email'] ?? '');
-    $password = $_POST['password'] ?? '';
-    $role_id  = (int) ($_POST['role_id'] ?? 0);
-
-    try {
-        // --- Validation ---
-        if ($username === '' || $email === '' || $password === '' || $role_id <= 0) {
-            throw new Exception("All fields are required.");
-        }
-
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            throw new Exception("Invalid email format.");
-        }
-
-        // --- Hash the password ---
-        $passwordHash = password_hash($password, PASSWORD_DEFAULT);
-
-        // --- Handle profile image ---
-        $profile = null;
-        if (!empty($_FILES['profile']['name']) && $_FILES['profile']['error'] === 0) {
-
-            $uploadDir = __DIR__ . '/../../users/'; // outside controllers folder
-
-            // Create folder if missing
-            if (!is_dir($uploadDir)) {
-                if (!mkdir($uploadDir, 0755, true) && !is_dir($uploadDir)) {
-                    throw new Exception("Failed to create upload directory: $uploadDir");
-                }
-            }
-
-            // Validate file type
-            $ext = strtolower(pathinfo($_FILES['profile']['name'], PATHINFO_EXTENSION));
-            $allowed = ['jpg','jpeg','png','gif'];
-            if (!in_array($ext, $allowed)) {
-                throw new Exception("Invalid file type. Allowed: " . implode(', ', $allowed));
-            }
-
-            $fileName = uniqid('user_') . '.' . $ext;
-            $destination = $uploadDir . $fileName;
-
-            if (!move_uploaded_file($_FILES['profile']['tmp_name'], $destination)) {
-                throw new Exception("Failed to move uploaded file.");
-            }
-
-            // Store relative path in DB
-            $profile = 'uploads/users/' . $fileName;
-        }
-
-        // --- Insert user into DB ---
-        $userModel->createUser($username, $email, $passwordHash, $role_id, $profile);
-
-        $_SESSION['success'] = "User created successfully!";
-        header("Location: userManager.php");
-        exit;
-
-    } catch (Exception $e) {
-        $_SESSION['error'] = $e->getMessage();
-        header("Location: userManager.php");
+    if ($UserModel->userExists($username, $email)) {
+        echo "Username or Email already taken!";
         exit;
     }
+
+    $uploadDir = $_SERVER['DOCUMENT_ROOT'] . '/ticketing/ticketing_system/uploads/profile/';
+
+    // 1️⃣ Ensure folder exists and is writable
+    if (!is_dir($uploadDir)) {
+        if (!mkdir($uploadDir, 0755, true)) {
+            die('Failed to create upload directory. Check folder permissions!');
+        }
+    }
+
+    // 2️⃣ Initialize profile variable
+    $profile = 'default.png'; // default profile image if none uploaded
+
+    // 3️⃣ Handle file upload
+    if (isset($_FILES['profile']) && $_FILES['profile']['error'] === UPLOAD_ERR_OK) {
+        $filename = time() . '_' . basename($_FILES['profile']['name']);
+        $destination = $uploadDir . $filename;
+
+        // Move uploaded file
+        if (!move_uploaded_file($_FILES['profile']['tmp_name'], $destination)) {
+            die('Failed to move uploaded file. Check folder permissions!');
+        }
+
+        // Set URL to the uploaded file
+        $profile = '/ticketing/ticketing_system/uploads/profile/' . $filename;
+    }
+
+    // 4️⃣ Create user in database
+    $UserModel->createUser($username, $email, $password, $role_id, $profile);
+
+    echo "User created successfully!";
+     header("Location: usersManager.");
+        exit;
+    
 }
+
+if (isset($_POST['deleteUserById'])) {
+
+    $user_id = intval($_POST['user_id']);
+
+    var_dump($_POST['deleteUserById']);
+
+    if ($UserModel->deleteUserById($user_id)) {
+        echo "<script>alert('User deleted successfully'); window.location.href='userManager.php';</script>";
+    } else {
+        echo "<script>alert('Failed to delete user');</script>";
+    }
+}
+
 
 if (isset($_POST['registerUser'])) {
 

@@ -24,7 +24,8 @@ require_once __DIR__ . '/../controllers/UserController.php';
     <title>Ticketing System</title>
 
     <link href="assets/css/app.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="assets/css/custom.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 </head>
 
     
@@ -32,6 +33,7 @@ require_once __DIR__ . '/../controllers/UserController.php';
     <nav id="sidebar" class="sidebar js-sidebar">
         <div class="sidebar-content js-simplebar">
             <a class="sidebar-brand" href="agentDashboard.php">
+                <i class="align-middle me-2" data-feather="ticket" style="width: 24px; height: 24px;"></i>
                 <span class="align-middle">Ticketing System</span>
             </a>
 
