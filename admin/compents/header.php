@@ -32,19 +32,27 @@ if (!isset($role_id)) {
     <title>Ticketing System</title>
 
     <link href="assets/css/app.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="assets/css/custom.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 </head>
 
 <div class="wrapper">
     <nav id="sidebar" class="sidebar js-sidebar">
         <div class="sidebar-content js-simplebar">
             <a class="sidebar-brand" href="dashboard.php">
+                <i class="align-middle me-2" data-feather="ticket" style="width: 24px; height: 24px;"></i>
                 <span class="align-middle">Ticketing System</span>
             </a>
 
             <ul class="sidebar-nav">
                 <li class="sidebar-header">
                     Pages
+                </li>
+
+                <li class="sidebar-item">
+                    <a class="sidebar-link" href="dashboard.php">
+                        <i class="align-middle" data-feather="log-in"></i> <span class="align-middle">Dashboard</span>
+                    </a>
                 </li>
 
                 <li class="sidebar-item active">
@@ -60,11 +68,7 @@ if (!isset($role_id)) {
                     </a>
                 </li>
 
-                <li class="sidebar-item">
-                    <a class="sidebar-link" href="pages-sign-in.html">
-                        <i class="align-middle" data-feather="log-in"></i> <span class="align-middle">Sign In</span>
-                    </a>
-                </li>
+            
 
                 <li class="sidebar-item">
                     <a class="sidebar-link" href="notifications.php">

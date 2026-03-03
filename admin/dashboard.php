@@ -6,32 +6,55 @@ ini_set('display_startup_errors', 1);
  require_once __DIR__ . '/config/connection.php';
  require_once __DIR__ . '/controllers/UserController.php';
  require_once __DIR__ . '/helpers/functions.php';
- require_once __DIR__ . '/controllers/TicketController.php';
- require_once __DIR__ . '/models/TicketModel.php';
+require_once __DIR__ . '/controllers/TicketController.php';
+require_once __DIR__ . '/models/TicketModel.php';
+
+// Ticket reporting & analytics
 $ticketModel = new TicketModel($pdo);
 
 // Total tickets
-$totalTickets = $pdo->query("SELECT COUNT(*) FROM tickets")->fetchColumn();
+$totalTickets = (int) $pdo->query("SELECT COUNT(*) FROM tickets")->fetchColumn();
 
 // Tickets by status
 $statusStats = $pdo->query("
-    SELECT status, COUNT(*) as total 
+    SELECT status, COUNT(*) AS total 
     FROM tickets 
     GROUP BY status
 ")->fetchAll(PDO::FETCH_ASSOC);
 
 // Tickets by priority
 $priorityStats = $pdo->query("
-    SELECT priority, COUNT(*) as total 
+    SELECT priority, COUNT(*) AS total 
     FROM tickets 
     GROUP BY priority
 ")->fetchAll(PDO::FETCH_ASSOC);
 
-// High & urgent tickets
-$criticalTickets = $pdo->query("
-    SELECT COUNT(*) FROM tickets 
-    WHERE priority IN ('high','urgent')
+// Total messages (all comments on tickets)
+$totalMessages = (int) $pdo->query("
+    SELECT COUNT(*) 
+    FROM ticket_comments
 ")->fetchColumn();
+
+// Average first response time (in minutes) for tickets that have at least one agent comment
+$avgFirstResponseMinutes = $pdo->query("
+    SELECT AVG(first_response_minutes) 
+    FROM (
+        SELECT 
+            tickets.ticket_id,
+            TIMESTAMPDIFF(
+                MINUTE,
+                tickets.created_at,
+                MIN(ticket_comments.created_at)
+            ) AS first_response_minutes
+        FROM tickets 
+        JOIN ticket_comments  
+            ON ticket_comments.ticket_id = tickets.ticket_id
+           AND ticket_comments.agent_id IS NOT NULL
+        GROUP BY tickets.ticket_id
+    ) AS responses
+")->fetchColumn();
+
+$avgFirstResponseMinutes = $avgFirstResponseMinutes !== null ? (float) $avgFirstResponseMinutes : 0.0;
 
 
 ?>
@@ -55,7 +78,8 @@ $criticalTickets = $pdo->query("
 	<title>Ticketing System</title>
 
 	<link href="assets/css/app.css" rel="stylesheet">
-	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+	<link href="assets/css/custom.css" rel="stylesheet">
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 </head>
 
 <body>
@@ -64,97 +88,105 @@ $criticalTickets = $pdo->query("
 			<main class="content">
 				<div class="container-fluid p-0">
 
-					<h1 class="h3 mb-3"><strong>Analytics</strong> Dashboard</h1>
+					<h1 class="h3 mb-3"><strong>Ticket</strong> Analytics</h1>
 
 					<div class="row">
 						<div class="col-xl-6 col-xxl-5 d-flex">
 							<div class="w-100">
 								<div class="row">
 									<div class="col-sm-6">
-										<div class="card">
+										<div class="card ticket-stat-card stat-open">
 											<div class="card-body">
 												<div class="row">
 													<div class="col mt-0">
-														<h5 class="card-title">Sales</h5>
+														<h5 class="card-title">
+															<i class="align-middle me-2" data-feather="ticket" style="width: 18px; height: 18px;"></i>
+															Total Tickets
+														</h5>
 													</div>
-
 													<div class="col-auto">
 														<div class="stat text-primary">
-															<i class="align-middle" data-feather="truck"></i>
+															<i class="align-middle" data-feather="ticket"></i>
 														</div>
 													</div>
 												</div>
-												<h1 class="mt-1 mb-3">2.382</h1>
-												<div class="mb-0">
-													<span class="text-danger"> <i
-															class="mdi mdi-arrow-bottom-right"></i> -3.65% </span>
-													<span class="text-muted">Since last week</span>
-												</div>
+												<h1 class="mt-1 mb-3 ticket-stat-number">
+													<?= (int) $totalTickets ?>
+												</h1>
+												<div class="ticket-stat-label">All Tickets</div>
 											</div>
 										</div>
-										<div class="card">
+										<div class="card ticket-stat-card">
 											<div class="card-body">
 												<div class="row">
 													<div class="col mt-0">
-														<h5 class="card-title">Visitors</h5>
+														<h5 class="card-title">
+															<i class="align-middle me-2" data-feather="message-circle" style="width: 18px; height: 18px;"></i>
+															Total Messages
+														</h5>
 													</div>
-
 													<div class="col-auto">
 														<div class="stat text-primary">
-															<i class="align-middle" data-feather="users"></i>
+															<i class="align-middle" data-feather="message-circle"></i>
 														</div>
 													</div>
 												</div>
-												<h1 class="mt-1 mb-3">14.212</h1>
-												<div class="mb-0">
-													<span class="text-success"> <i
-															class="mdi mdi-arrow-bottom-right"></i> 5.25% </span>
-													<span class="text-muted">Since last week</span>
-												</div>
+												<h1 class="mt-1 mb-3 ticket-stat-number">
+													<?= (int) $totalMessages ?>
+												</h1>
+												<div class="ticket-stat-label">All Comments</div>
 											</div>
 										</div>
 									</div>
 									<div class="col-sm-6">
-										<div class="card">
+										<div class="card ticket-stat-card">
 											<div class="card-body">
 												<div class="row">
 													<div class="col mt-0">
-														<h5 class="card-title">Earnings</h5>
+														<h5 class="card-title">
+															<i class="align-middle me-2" data-feather="clock" style="width: 18px; height: 18px;"></i>
+															Avg. First Response
+														</h5>
 													</div>
-
 													<div class="col-auto">
 														<div class="stat text-primary">
-															<i class="align-middle" data-feather="dollar-sign"></i>
+															<i class="align-middle" data-feather="clock"></i>
 														</div>
 													</div>
 												</div>
-												<h1 class="mt-1 mb-3">$21.300</h1>
-												<div class="mb-0">
-													<span class="text-success"> <i
-															class="mdi mdi-arrow-bottom-right"></i> 6.65% </span>
-													<span class="text-muted">Since last week</span>
-												</div>
+												<h1 class="mt-1 mb-3 ticket-stat-number">
+													<?= number_format($avgFirstResponseMinutes, 1) ?> <small style="font-size: 1.5rem;">min</small>
+												</h1>
+												<div class="ticket-stat-label">Response Time</div>
 											</div>
 										</div>
-										<div class="card">
+										<div class="card ticket-stat-card stat-in-progress">
 											<div class="card-body">
 												<div class="row">
 													<div class="col mt-0">
-														<h5 class="card-title">Orders</h5>
+														<h5 class="card-title">
+															<i class="align-middle me-2" data-feather="alert-triangle" style="width: 18px; height: 18px;"></i>
+															Critical Tickets
+														</h5>
 													</div>
-
 													<div class="col-auto">
 														<div class="stat text-primary">
-															<i class="align-middle" data-feather="shopping-cart"></i>
+															<i class="align-middle" data-feather="alert-triangle"></i>
 														</div>
 													</div>
 												</div>
-												<h1 class="mt-1 mb-3">64</h1>
-												<div class="mb-0">
-													<span class="text-danger"> <i
-															class="mdi mdi-arrow-bottom-right"></i> -2.25% </span>
-													<span class="text-muted">Since last week</span>
-												</div>
+												<?php
+												$criticalTickets = 0;
+												foreach ($priorityStats as $row) {
+													if (in_array(strtolower($row['priority']), ['high', 'urgent'], true)) {
+														$criticalTickets += (int) $row['total'];
+													}
+												}
+												?>
+												<h1 class="mt-1 mb-3 ticket-stat-number">
+													<?= (int) $criticalTickets ?>
+												</h1>
+												<div class="ticket-stat-label">High & Urgent</div>
 											</div>
 										</div>
 									</div>
@@ -165,13 +197,19 @@ $criticalTickets = $pdo->query("
 						<div class="col-xl-6 col-xxl-7">
 							<div class="card flex-fill w-100">
 								<div class="card-header">
-
-									<h5 class="card-title mb-0">Recent Movement</h5>
+									<h5 class="card-title mb-0">
+										<i class="align-middle me-2" data-feather="pie-chart"></i>
+										Tickets by Status
+									</h5>
 								</div>
 								<div class="card-body py-3">
-									<div class="chart chart-sm">
-										<canvas id="chartjs-dashboard-line"></canvas>
-									</div>
+									<?php if (!empty($statusStats)): ?>
+										<div class="chart chart-sm">
+											<canvas id="ticketStatusPieChart"></canvas>
+										</div>
+									<?php else: ?>
+										<p class="text-center text-muted mb-0">No tickets yet.</p>
+									<?php endif; ?>
 								</div>
 							</div>
 						</div>
@@ -181,85 +219,6 @@ $criticalTickets = $pdo->query("
 
 
 
-
-						<div class="row">
-							<div class="col-12 col-lg-8 col-xxl-9 d-flex">
-								<div class="card flex-fill">
-									<div class="card-header">
-
-										<h5 class="card-title mb-0">Latest Projects</h5>
-									</div>
-									<table class="table table-hover my-0">
-										<thead>
-											<tr>
-												<th>Name</th>
-												<th class="d-none d-xl-table-cell">Start Date</th>
-												<th class="d-none d-xl-table-cell">End Date</th>
-												<th>Status</th>
-												<th class="d-none d-md-table-cell">Assignee</th>
-											</tr>
-										</thead>
-										<tbody>
-											<tr>
-												<td>Project Apollo</td>
-												<td class="d-none d-xl-table-cell">01/01/2023</td>
-												<td class="d-none d-xl-table-cell">31/06/2023</td>
-												<td><span class="badge bg-success">Done</span></td>
-												<td class="d-none d-md-table-cell">Vanessa Tucker</td>
-											</tr>
-											<tr>
-												<td>Project Fireball</td>
-												<td class="d-none d-xl-table-cell">01/01/2023</td>
-												<td class="d-none d-xl-table-cell">31/06/2023</td>
-												<td><span class="badge bg-danger">Cancelled</span></td>
-												<td class="d-none d-md-table-cell">William Harris</td>
-											</tr>
-											<tr>
-												<td>Project Hades</td>
-												<td class="d-none d-xl-table-cell">01/01/2023</td>
-												<td class="d-none d-xl-table-cell">31/06/2023</td>
-												<td><span class="badge bg-success">Done</span></td>
-												<td class="d-none d-md-table-cell">Sharon Lessman</td>
-											</tr>
-											<tr>
-												<td>Project Nitro</td>
-												<td class="d-none d-xl-table-cell">01/01/2023</td>
-												<td class="d-none d-xl-table-cell">31/06/2023</td>
-												<td><span class="badge bg-warning">In progress</span></td>
-												<td class="d-none d-md-table-cell">Vanessa Tucker</td>
-											</tr>
-											<tr>
-												<td>Project Phoenix</td>
-												<td class="d-none d-xl-table-cell">01/01/2023</td>
-												<td class="d-none d-xl-table-cell">31/06/2023</td>
-												<td><span class="badge bg-success">Done</span></td>
-												<td class="d-none d-md-table-cell">William Harris</td>
-											</tr>
-											<tr>
-												<td>Project X</td>
-												<td class="d-none d-xl-table-cell">01/01/2023</td>
-												<td class="d-none d-xl-table-cell">31/06/2023</td>
-												<td><span class="badge bg-success">Done</span></td>
-												<td class="d-none d-md-table-cell">Sharon Lessman</td>
-											</tr>
-											<tr>
-												<td>Project Romeo</td>
-												<td class="d-none d-xl-table-cell">01/01/2023</td>
-												<td class="d-none d-xl-table-cell">31/06/2023</td>
-												<td><span class="badge bg-success">Done</span></td>
-												<td class="d-none d-md-table-cell">Christina Mason</td>
-											</tr>
-											<tr>
-												<td>Project Wombat</td>
-												<td class="d-none d-xl-table-cell">01/01/2023</td>
-												<td class="d-none d-xl-table-cell">31/06/2023</td>
-												<td><span class="badge bg-warning">In progress</span></td>
-												<td class="d-none d-md-table-cell">William Harris</td>
-											</tr>
-										</tbody>
-									</table>
-								</div>
-							</div>
 
 			</main>
 
@@ -296,9 +255,82 @@ $criticalTickets = $pdo->query("
 		</div>
 	</div>
 
+	<!-- Chart.js CDN (fallback if not in app.js) -->
+	<script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
 	<script src="js/app.js"></script>
 
+	<script>
+		// Wait for Chart.js to be available
+		document.addEventListener('DOMContentLoaded', function() {
+			<?php if (!empty($statusStats)): ?>
+			// Check if Chart is available
+			if (typeof Chart === 'undefined') {
+				console.error('Chart.js is not loaded');
+				return;
+			}
+			
+			const statusData = <?= json_encode($statusStats) ?>;
+			
+			// Extract labels and data
+			const statusLabels = statusData.map(item => item.status);
+			const statusCounts = statusData.map(item => parseInt(item.total));
+			
+			// Color palette for different statuses
+			const statusColors = {
+				'open': '#3b82f6',      // Blue
+				'in_progress': '#f59e0b', // Amber
+				'resolved': '#10b981',    // Green
+				'closed': '#6b7280',      // Gray
+				'pending': '#ef4444'       // Red
+			};
+			
+			// Generate colors array based on status
+			const backgroundColors = statusLabels.map(status => {
+				const normalizedStatus = status.toLowerCase().replace(/\s+/g, '_');
+				return statusColors[normalizedStatus] || '#8b5cf6'; // Default purple
+			});
+			
+			// Create pie chart
+			const ctx = document.getElementById('ticketStatusPieChart');
+			if (ctx) {
+				new Chart(ctx, {
+					type: 'pie',
+					data: {
+						labels: statusLabels,
+						datasets: [{
+							data: statusCounts,
+							backgroundColor: backgroundColors,
+							borderColor: '#ffffff',
+							borderWidth: 2
+						}]
+					},
+					options: {
+						responsive: true,
+						maintainAspectRatio: true,
+						legend: {
+							position: 'bottom',
+							labels: {
+								padding: 15,
+								usePointStyle: true
+							}
+						},
+						tooltips: {
+							callbacks: {
+								label: function(tooltipItem, data) {
+									const label = data.labels[tooltipItem.index] || '';
+									const value = data.datasets[0].data[tooltipItem.index];
+									const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
+									const percentage = ((value / total) * 100).toFixed(1);
+									return label + ': ' + value + ' (' + percentage + '%)';
+								}
+							}
+						}
+					}
+				});
+			}
+			<?php endif; ?>
+		});
+	</script>
 
 </body>
-
 </html>

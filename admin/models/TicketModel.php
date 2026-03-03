@@ -14,7 +14,7 @@ class TicketModel
         // 1️⃣ Generate reference number if not already provided
         $ticketRef = $data['reference'] ?? $this->generateTicketRef(); // we will add generateTicketRef()
 
-        // 2️⃣ Prepare SQL including reference
+
         $sql = "
         INSERT INTO tickets 
         (title, description, email, status, priority, category_id, user_id, contact, support_email, reference)
@@ -176,7 +176,7 @@ class TicketModel
 
             // Ensure message_id exists
             if (empty($data['message_id'])) {
-                $data['message_id'] = "<ticket-{$data['reference']}@morgankolly5@gmail.com>";
+                $data['message_id'] = "<ticket-{$data['reference']}@localhost>";
             }
 
             $stmt->execute([
@@ -260,38 +260,38 @@ class TicketModel
             ]);
         }
     }
-
-    public function sendCustomerEmail($data, $ticketRef)
-    {
-        if (!function_exists('sendemail')) {
-            return;
-        }
-
-        $subject = "Ticket Received - #{$ticketRef}";
-
-        $body = "
-        <h2>Thank You for Contacting Support</h2>
-        <p>Your ticket has been submitted successfully.</p>
-        <p><strong>Reference:</strong> {$ticketRef}</p>
-        <p><strong>Title:</strong> " . htmlspecialchars($data['title']) . "</p>
-        <p><strong>Status:</strong> Open</p>
-        <br>
+public function sendCustomerEmail($data, $ticketRef) {
+    
+    $subject = "Ticket Received - #{$ticketRef}";
+    
+    $body = "
+        <html>
+        <body>
+            <h2>Ticket Submitted Successfully</h2>
+            <p>Hello,</p>
+            <p>Your ticket has been created successfully.</p>
+            <p><strong>Ticket Reference:</strong> {$ticketRef}</p>
+            <p><strong>Title:</strong> {$data['title']}</p>
+            <p><strong>Description:</strong> {$data['description']}</p>
+            <br>
+            <p>If your issue is resolved, you can close your ticket here:</p>
+            <p><a href='{$data['close_link']}'>Close Ticket #{$ticketRef}</a></p>
+            <br>
+            <p>Support Team</p>
+        </body>
+        </html>
     ";
-
-        // ✅ Add Close Link
-        if (!empty($data['close_link'])) {
-            $body .= "<br><br>";
-            $body .= "If your issue is resolved, you can close your ticket here:<br>";
-            $body .= "<a href='" . htmlspecialchars($data['close_link']) . "'>Close Ticket</a>";
-            $body .= "<br><br>";
-        }
-
-        $body .= "
-        <p>Support Team</p>
-    ";
-
-        sendemail($data['email'], "Customer", $subject, $body);
-    }
+    
+    // ✅ Send with Message-ID for threading
+    return sendemail(
+        $data['email'],
+        'Customer',
+        $subject,
+        $body,
+        $data['message_id'], // This is the Message-ID for the first email
+        null                 // No inReplyTo for first email
+    );
+}
     public function getTicketByReference(string $ticketRef): ?array
     {
         $stmt = $this->pdo->prepare("
@@ -642,6 +642,8 @@ class TicketModel
 
         return $closeLink;
     }
+
+    
 }
 
 

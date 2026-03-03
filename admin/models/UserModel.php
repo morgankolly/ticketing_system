@@ -41,22 +41,22 @@
         return $stmt->execute();
     }
 
-    public function updateUser($user_id, $username, $email, $role_id,$profile) {
+     public function updateUser(int $user_id, string $username, string $email, int $role_id, ?string $profile): bool {
         $stmt = $this->pdo->prepare("
-            UPDATE `Users` SET 
-                `user_name` = :username,
-                `email` = :email,
-                `role_id` = :role_id
-                ,`profile` = :profile
-            WHERE `user_id` = :user_id
+            UPDATE users SET 
+                user_name = :user_name,
+                email = :email,
+                role_id = :role_id,
+                profile = :profile
+            WHERE user_id = :user_id
         ");
-
-        $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
-        $stmt->bindParam(':username', $username, PDO::PARAM_STR);
-        $stmt->bindParam(':email', $email, PDO::PARAM_STR);
-        $stmt->bindParam(':role_id', $role_id, PDO::PARAM_INT);
-        $stmt->bindParam(':profile', $profile, PDO::PARAM_STR);
-        return $stmt->execute();
+        return $stmt->execute([
+            ':user_id'   => $user_id,
+            ':user_name' => $username,
+            ':email'     => $email,
+            ':role_id'   => $role_id,
+            ':profile'   => $profile
+        ]);
     }
 
 
@@ -73,14 +73,19 @@
 
 
         }
-        public function deleteUserById($user_id) {
-        $stmt = $this->pdo->prepare("DELETE FROM Users WHERE user_id = :user_id");
-        return $stmt->execute([':user_id' => $user_id]);
-    }
+        public function deleteUserById(int $userId): bool
+{
+    $pdo = "DELETE FROM users WHERE user_id = :user_id";
+    $stmt = $this->pdo->prepare($pdo);
+
+    return $stmt->execute([
+        ':user_id' => $userId
+    ]);
+}
 
         public function updatePassword(string $username, string $password,){
             $hashedPassword = password_hash($password, PASSWORD_BCRYPT); // encrypyt the password
-            $stmt = $this->pdo->prepare("UPDATE Users SET password = :password WHERE user_name = :user_name");
+            $stmt = $this->pdo->prepare("UPDATE users SET password = :password WHERE user_name = :user_name");
             $stmt->bindParam(':user_name', $username, PDO::PARAM_STR);
             $stmt->bindParam(':password', $hashedPassword, PDO::PARAM_STR);
             return $stmt->execute();
@@ -165,18 +170,19 @@
     $stmt->execute([$email]);
     return $stmt->fetchColumn() > 0;
 }
-    public function getUserById(int $userId): ?array {
-        $stmt = $this->pdo->prepare("
-            SELECT user_name, email 
-            FROM users 
-            WHERE user_id = :user_id 
-            LIMIT 1
-        ");
-        $stmt->execute([':user_id' => $userId]);
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $user ?: null;
-    }
+   
 
+    public function getUserById($id)
+{
+    $stmt = $this->pdo->prepare("
+        SELECT users.user_id, users.user_name, users.email, users.profile, roles.role_name, users.created_at
+        FROM users 
+        LEFT JOIN roles  ON users.role_id = roles.role_id
+        WHERE users.user_id = ?
+    ");
+    $stmt->execute([$id]);
+    return $stmt->fetch(PDO::FETCH_ASSOC);
+}
 
  public function userExists(string $username, string $email): bool {
 
@@ -202,7 +208,7 @@
     ): int {
 
         $sql = "INSERT INTO users 
-                    (user_name, email, password, role_id, profile_image, created_at)
+                    (user_name, email, password, role_id, profile, created_at)
                 VALUES 
                     (:username, :email, :password, :role_id, :profile, NOW())";
 
@@ -218,6 +224,25 @@
 
         return (int) $this->pdo->lastInsertId();
     }
+
+    public function getRandomAgent()
+{
+    $pdo = "SELECT user_id, user_name, email 
+            FROM users 
+            WHERE role_id = 2"; // Only agents
+
+    $stmt = $this->pdo->prepare($pdo);
+    $stmt->execute();
+    $agents = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    if (empty($agents)) {
+        return null;
+    }
+
+    // Pick one randomly
+    return $agents[array_rand($agents)];
+}
+
 }
 
 
