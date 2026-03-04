@@ -9,6 +9,12 @@ require_once __DIR__ . '/helpers/functions.php';
 require_once __DIR__ . '/compents/AgentHeader.php';
 require_once __DIR__ . '/controllers/TicketController.php';
 
+$ticketModel = new TicketModel($pdo);
+$viewRef = trim($_GET['ticket_ref'] ?? '');
+if (!empty($viewRef)) {
+    $ticketModel->markAsInProgress($viewRef);
+}
+
 
 
 ?>
