@@ -139,7 +139,7 @@ if (isset($_POST['assign_ticket'])) {
                 'From' => 'morgankolly5@gmail.com'
             ];
 
-            sendemail($agent['email'], $agent['user_name'], $subject, $body, $header, $data );
+            sendemail($agent['email'], $agent['user_name'], $subject, $body);
         }
 
         // 7️⃣ Create system notification
@@ -149,7 +149,11 @@ if (isset($_POST['assign_ticket'])) {
         }
 
         $notifMsg = "Ticket {$ticketRef} assigned to {$agent['user_name']} with {$priority} priority.";
-        $notifModel->createNotification($ticket['ticket_id'], $ticketRef, $notifMsg);
+        try {
+            $notifModel->createNotification($ticket['ticket_id'], $ticketRef, $notifMsg);
+        } catch (Exception $e) {
+            error_log("Notification Error: " . $e->getMessage());
+        }
 
         // 8️⃣ Success
         echo "<script>
@@ -181,7 +185,7 @@ $ticketPriorities = ['low', 'medium', 'high'];
 $query = "SELECT tickets.*, category.category_name 
           FROM tickets 
           JOIN category ON tickets.category_id = category.category_id
-          WHERE 1=1";
+          WHERE tickets.user_id IS NULL";
 
 $params = [];
 

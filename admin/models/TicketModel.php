@@ -504,6 +504,17 @@ public function sendCustomerEmail($data, $ticketRef) {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function markAsInProgress(string $ticketRef): void
+    {
+        $stmt = $this->pdo->prepare("
+            UPDATE tickets
+            SET status = 'in_progress'
+            WHERE reference = :reference
+            AND status = 'open'
+        ");
+        $stmt->execute([':reference' => $ticketRef]);
+    }
+
     public function closeTicket($ticketRef, $closedBy)
     {
         $stmt = $this->pdo->prepare("

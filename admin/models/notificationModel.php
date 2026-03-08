@@ -17,5 +17,63 @@ class NotificationModel {
             ':message'   => $message
         ]);
     }
+
+    public function notifyAssignedAgent(string $ticketRef, string $senderEmail): void
+    {
+        // Get ticket and assigned agent's email
+        $stmt = $this->pdo->prepare("
+            SELECT t.ticket_id, u.email AS agent_email
+            FROM tickets t
+            INNER JOIN users u ON u.user_id = t.user_id
+            WHERE t.reference = :reference
+            LIMIT 1
+        ");
+        $stmt->execute([':reference' => $ticketRef]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$row) return; // ticket not found or not assigned
+
+        $message = "User ({$senderEmail}) replied to ticket {$ticketRef}.";
+
+        $notifStmt = $this->pdo->prepare("
+            INSERT INTO notifications (email, ticket_id, message, is_read, created_at)
+            VALUES (:email, :ticket_id, :message, 0, NOW())
+        ");
+        $notifStmt->execute([
+            ':email'     => $row['agent_email'],
+            ':ticket_id' => $row['ticket_id'],
+            ':message'   => $message,
+        ]);
+    }
     
+    public function getAgent(string $email) {
+        $stmt = $this->pdo->prepare("SELECT * FROM users WHERE email = :email LIMIT 1");
+        $stmt->execute(['email' => $email]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    
+    public function getNotifications(string $email): array {
+        $stmt = $this->pdo->prepare("
+            SELECT * FROM notifications
+            WHERE email = :email
+            ORDER BY created_at DESC
+        ");
+        $stmt->execute(['email' => $email]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function countUnread(array $notifications): int {
+        return count(array_filter($notifications, fn($n) => $n['is_read'] == 0));
+    }
+
+    
+    public function markAllRead(string $email): void {
+        $stmt = $this->pdo->prepare("
+            UPDATE notifications
+            SET is_read = 1
+            WHERE email = :email AND is_read = 0
+        ");
+        $stmt->execute(['email' => $email]);
+    }   
 }
