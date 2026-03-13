@@ -654,7 +654,116 @@ public function sendCustomerEmail($data, $ticketRef) {
         return $closeLink;
     }
 
+   function sendTicketForReassignment($pdo, $reference)
+{
+    $stmt = $pdo->prepare("
+        UPDATE tickets
+        SET user_id = NULL,
+            status = 'open'
+        WHERE reference = ?
+    ");
+
     
+    return $stmt->execute([$reference]);
+}
+    
+public function markTicketAsRead(int $ticketId): bool
+{
+    $stmt = $this->pdo->prepare("
+        UPDATE tickets 
+        SET is_read = 1 
+        WHERE ticket_id = :ticket_id
+    ");
+
+    return $stmt->execute([
+        'ticket_id' => $ticketId
+    ]);
+}
+
+
+public function updateStatus(int $ticketId, string $newStatus): bool
+{
+    if ($ticketId <= 0 || empty($newStatus)) {
+        return false;
+    }
+
+    $stmt = $this->pdo->prepare("
+        UPDATE tickets
+           SET status = :status,
+               updated_at = NOW()
+         WHERE id = :id
+    ");
+
+    try {
+        $success = $stmt->execute([
+            'status' => $newStatus,
+            'id'     => $ticketId,
+        ]);
+        return $success;
+    } catch (PDOException $e) {
+        error_log("updateStatus failed: " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Update ticket priority
+ *
+ * @param int    $ticketId
+ * @param string $newPriority
+ * @return bool
+ */
+public function updatePriority(string $reference, string $newPriority): bool
+{
+    if (empty($reference) || empty($newPriority)) {
+        return false;
+    }
+
+    $stmt = $this->pdo->prepare("
+        UPDATE tickets
+           SET priority    = :priority,
+               updated_at  = NOW()
+         WHERE reference   = :reference
+    ");
+
+    try {
+        $stmt->execute([
+            ':priority'   => $newPriority,
+            ':reference'  => $reference,
+        ]);
+
+        // Only consider it successful if exactly one row was updated
+        return $stmt->rowCount() === 1;
+    } catch (PDOException $e) {
+        error_log("updatePriority failed for reference {$reference}: " . $e->getMessage());
+        return false;
+    }
+}
+public function findTicket(string $reference): ?array
+{
+    // Remove extra spaces
+    $reference = trim($reference);
+
+    // Stop if reference is empty
+    if ($reference === '') {
+        return null;
+    }
+
+    $stmt = $this->pdo->prepare("
+        SELECT *
+        FROM tickets
+        WHERE reference = :reference
+        LIMIT 1
+    ");
+
+    $stmt->execute([
+        ':reference' => $reference
+    ]);
+
+    $ticket = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    return $ticket ?: null;
+}
 }
 
 

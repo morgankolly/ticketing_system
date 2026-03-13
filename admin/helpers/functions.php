@@ -272,4 +272,16 @@ function removeEmailQuotes($content) {
     
     return trim($content);
 }
+
+function sendTicketForReassignment($pdo, $reference)
+{
+    $stmt = $pdo->prepare("
+        UPDATE tickets
+        SET user_id = NULL,
+            status = 'unresolved'
+        WHERE reference = ?
+    ");
+
+    return $stmt->execute([$reference]);
+}
 ?>

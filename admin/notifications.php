@@ -1,101 +1,121 @@
 <?php
-
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 
-include_once __DIR__ . '/compents/header.php';
+include_once __DIR__ . '/compents/header.php';  // ← typo? should be components/header.php ?
 include_once __DIR__ . '/helpers/functions.php';
 include_once __DIR__ . '/config/connection.php';
-$stmt = $pdo->query("SELECT * FROM notifications ORDER BY created_at DESC");
+
+// Get all notifications (newest first)
+$stmt = $pdo->query("
+    SELECT * 
+    FROM notifications 
+    ORDER BY created_at DESC
+");
 $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-$notif_stmt = $pdo->query("SELECT * FROM notifications ORDER BY created_at DESC");
-$notifications = $notif_stmt->fetchAll(PDO::FETCH_ASSOC);
-$ticket_stmt = $pdo->query("SELECT * FROM tickets WHERE is_read = 0 ORDER BY created_at DESC");
-$new_tickets = $ticket_stmt->fetchAll(PDO::FETCH_ASSOC);
-$new_ticket_count = count($new_tickets);
+// Mark all as read (you can make this more selective later)
 $pdo->query("UPDATE notifications SET is_read = 1 WHERE is_read = 0");
 
 
-
-
-$notif_stmt = $pdo->query("SELECT * FROM notifications ORDER BY created_at DESC");
-$notifications = $notif_stmt->fetchAll(PDO::FETCH_ASSOC);
-$ticket_stmt = $pdo->query("SELECT * FROM tickets WHERE is_read = 0 ORDER BY created_at DESC");
+$ticket_stmt = $pdo->query("
+    SELECT * 
+    FROM tickets 
+    WHERE is_read = 0 
+    ORDER BY created_at DESC
+");
 $new_tickets = $ticket_stmt->fetchAll(PDO::FETCH_ASSOC);
 $new_ticket_count = count($new_tickets);
-$pdo->query("UPDATE notifications SET is_read = 1 WHERE is_read = 0");
 
+// Mark tickets as read (optional — many systems keep them unread until viewed)
 $pdo->query("UPDATE tickets SET is_read = 1 WHERE is_read = 0");
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Notifications & Tickets</title>
-   
-    <head>
-	<meta charset="utf-8">
-	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-	<meta name="description" content="Responsive Admin &amp; Dashboard Template based on Bootstrap 5">
-	<meta name="author" content="AdminKit">
-	<meta name="keywords"
-		content="adminkit, bootstrap, bootstrap 5, admin, dashboard, template, responsive, css, sass, html, theme, front-end, ui kit, web">
-
-	<link rel="preconnect" href="https://fonts.gstatic.com">
-	<link rel="shortcut icon" href="img/icons/icon-48x48.png" />
-
-	<link rel="canonical" href="https://demo-basic.adminkit.io/" />
-
-	<title>Ticketing System</title>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notifications & Tickets - Ticketing System</title>
     <link href="assets/css/app.css" rel="stylesheet">
-	<link href="assets/css/custom.css" rel="stylesheet">
-	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-</head>
+    <link href="assets/css/custom.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
-<h3>Notifications 
-    <?php if(count($notifications) > 0): ?>
-        <span class="indicator"><?= count($notifications) ?></span>
+<div class="container">
+
+    <h3>
+        Notifications
+        <?php if (count($notifications) > 0): ?>
+            <span class="indicator badge bg-danger"><?= count($notifications) ?></span>
+        <?php endif; ?>
+    </h3>
+
+    <?php if (!empty($notifications)): ?>
+        <ul class="list-group list-group-flush notification-list">
+            <?php foreach ($notifications as $notif): ?>
+                <li class="list-group-item <?= $notif['is_read'] == 0 ? 'bg-light fw-bold' : '' ?>">
+                    <?php
+                    // Decide link — adjust column name to match your table
+                    $link = '#'; // fallback
+                    if (!empty($notif['related_ticket_ref'])) {
+                        $link = "view_tickets.php?ref=" . urlencode($notif['related_ticket_ref']);
+                    } elseif (!empty($notif['related_ticket_id'])) {
+                        $link = "view-ticket.php?id=" . (int)$notif['related_ticket_id'];
+                    }
+                    ?>
+
+                    <?php if ($link !== '#'): ?>
+                        <a href="<?= htmlspecialchars($link) ?>" class="text-decoration-none stretched-link">
+                    <?php endif; ?>
+
+                        <?= htmlspecialchars($notif['message']) ?>
+
+                        <small class="d-block text-muted mt-1">
+                            <?= date('M d, Y H:i', strtotime($notif['created_at'])) ?>
+                        </small>
+
+                    <?php if ($link !== '#'): ?>
+                        </a>
+                    <?php endif; ?>
+                </li>
+            <?php endforeach; ?>
+        </ul>
+    <?php else: ?>
+        <div class="alert alert-info">No notifications at the moment.</div>
     <?php endif; ?>
-</h3>
 
-<?php if (!empty($notifications)): ?>
-    <ul>
-        <?php foreach ($notifications as $notif): ?>
-            <li class="<?= $notif['is_read'] == 0 ? 'unread' : '' ?>">
-                <?= htmlspecialchars($notif['message']) ?><br>
-                <small><?= $notif['created_at'] ?></small>
-            </li>
-        <?php endforeach; ?>
-    </ul>
-<?php else: ?>
-    <p>No notifications</p>
-<?php endif; ?>
+    <hr>
 
-<h3>New Tickets 
-    <?php if($new_ticket_count > 0): ?>
-        <span class="indicator"><?= $new_ticket_count ?></span>
+    <h3>
+        New Tickets
+        <?php if ($new_ticket_count > 0): ?>
+            <span class="indicator badge bg-warning"><?= $new_ticket_count ?></span>
+        <?php endif; ?>
+    </h3>
+
+    <?php if (!empty($new_tickets)): ?>
+        <ul class="list-group list-group-flush">
+            <?php foreach ($new_tickets as $ticket): ?>
+                <li class="list-group-item bg-light">
+                    <a href="view_tickets.php?ref=<?= urlencode($ticket['reference']) ?>" class="text-decoration-none stretched-link">
+                        <strong><?= htmlspecialchars($ticket['title']) ?></strong><br>
+                        <?= nl2br(htmlspecialchars(substr($ticket['description'], 0, 120))) ?>...
+                        <small class="d-block text-muted mt-1">
+                            Submitted by: <?= htmlspecialchars($ticket['email']) ?> • 
+                            <?= date('M d, Y H:i', strtotime($ticket['created_at'])) ?>
+                        </small>
+                    </a>
+                </li>
+            <?php endforeach; ?>
+        </ul>
+    <?php else: ?>
+        <div class="alert alert-secondary">No new unread tickets.</div>
     <?php endif; ?>
-</h3>
 
-<?php if (!empty($new_tickets)): ?>
-    <ul>
-        <?php foreach ($new_tickets as $ticket): ?>
-            <li class="unread">
-                <strong><?= htmlspecialchars($ticket['title']) ?></strong><br>
-                <?= htmlspecialchars($ticket['description']) ?><br>
-                <small>Submitted by: <?= htmlspecialchars($ticket['email']) ?> | <?= $ticket['created_at'] ?></small>
-            </li>
-        <?php endforeach; ?>
-    </ul>
-<?php else: ?>
-    <p>No new tickets</p>
-<?php endif; ?>
+</div>
 
 </body>
 </html>

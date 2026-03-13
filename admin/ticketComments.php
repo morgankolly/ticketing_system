@@ -120,7 +120,7 @@ $comments = $ticketModel->getTicketCommentsThread($ticketRef);
                     <div class="mb-3">
                         <label class="form-label">Your Comment</label>
                         <textarea name="comment" class="form-control" rows="5" 
-                                  placeholder="Type your response here..." required></textarea>
+                                  placeholder="Type your response here..." ></textarea>
                     </div>
                     <div class="d-flex gap-2">
                         <button type="submit" name="submit_comment" class="btn btn-primary">

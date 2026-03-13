@@ -76,4 +76,41 @@ class NotificationModel {
         ");
         $stmt->execute(['email' => $email]);
     }   
+
+    public function markRelatedAsRead(int $ticketId, string $reference = ''): int
+    {
+        $conditions = [];
+        $params = [];
+
+        if ($ticketId > 0) {
+            $conditions[] = "ticket_id = :ticket_id";
+            $params['ticket_id'] = $ticketId;
+        }
+
+        if (!empty($reference)) {
+            $conditions[] = "reference = :reference";
+            $params['reference'] = $reference;
+        }
+
+        if (empty($conditions)) {
+            return 0;
+        }
+
+        $whereClause = implode(' OR ', $conditions);
+
+        $stmt = $this->pdo->prepare("
+            UPDATE notifications
+               SET is_read = 1
+             WHERE ($whereClause)
+               AND is_read = 0
+        ");
+
+        try {
+            $stmt->execute($params);
+            return $stmt->rowCount();
+        } catch (PDOException $e) {
+            error_log("markRelatedAsRead failed: " . $e->getMessage());
+            return 0;
+        }
+    }
 }
