@@ -44,9 +44,12 @@ $agent = $userModel->getUserById($agentId);
 								<div class="row">
 									<div class="col-sm-6">
 										<div class="card">
+										
 											<div class="card-body">
+												<a href="agentTickets.php?agent=<?= $agentId ?>" style="text-decoration:none;color:inherit;">
 												<div class="row">
 													<div class="col mt-0">
+														
 														<h5 class="card-title">Total Assigned</h5>
 													</div>
 													<div class="col-auto">
@@ -56,9 +59,11 @@ $agent = $userModel->getUserById($agentId);
 													</div>
 												</div>
 												<h1 class="mt-1 mb-3"><?= $totalAssigned ?></h1>
+												</a>
 											</div>
 										</div>
 										<div class="card">
+											<a href="agentTickets.php?status=open&agent=<?= $agentId ?>" style="text-decoration:none;color:inherit;">
 											<div class="card-body">
 												<div class="row">
 													<div class="col mt-0">
@@ -72,10 +77,12 @@ $agent = $userModel->getUserById($agentId);
 												</div>
 												<h1 class="mt-1 mb-3"><?= $openTickets ?></h1>
 											</div>
+											</a>
 										</div>
 									</div>
 									<div class="col-sm-6">
 										<div class="card">
+											<a href="agentTickets.php?status=in_progress&agent=<?= $agentId ?>" style="text-decoration:none;color:inherit;">
 											<div class="card-body">
 												<div class="row">
 													<div class="col mt-0">
@@ -89,8 +96,10 @@ $agent = $userModel->getUserById($agentId);
 												</div>
 												<h1 class="mt-1 mb-3"><?= $inProgressTickets ?></h1>
 											</div>
+											</a>
 										</div>
 										<div class="card">
+											<a href="agentTickets.php?status=closed&agent=<?= $agentId ?>" style="text-decoration:none;color:inherit;">
 											<div class="card-body">
 												<div class="row">
 													<div class="col mt-0">
@@ -102,8 +111,9 @@ $agent = $userModel->getUserById($agentId);
 														</div>
 													</div>
 												</div>
-												<h1 class="mt-1 mb-3"><?= $resolvedTickets ?></h1>
+												<h1 class="mt-1 mb-3"><?= $closedTickets ?></h1>
 											</div>
+											</a>
 										</div>
 									</div>
 								</div>
@@ -142,94 +152,14 @@ $agent = $userModel->getUserById($agentId);
 
 
 
-						<div class="row">
-							<div class="col-12 col-lg-8 col-xxl-9 d-flex">
-								<div class="card flex-fill">
-									<div class="card-header">
-
-										<h5 class="card-title mb-0">Latest Projects</h5>
-									</div>
-									<table class="table table-hover my-0">
-										<thead>
-											<tr>
-												<th>Name</th>
-												<th class="d-none d-xl-table-cell">Start Date</th>
-												<th class="d-none d-xl-table-cell">End Date</th>
-												<th>Status</th>
-												<th class="d-none d-md-table-cell">Assignee</th>
-											</tr>
-										</thead>
-										<tbody>
-											<tr>
-												<td>Project Apollo</td>
-												<td class="d-none d-xl-table-cell">01/01/2023</td>
-												<td class="d-none d-xl-table-cell">31/06/2023</td>
-												<td><span class="badge bg-success">Done</span></td>
-												<td class="d-none d-md-table-cell">Vanessa Tucker</td>
-											</tr>
-											<tr>
-												<td>Project Fireball</td>
-												<td class="d-none d-xl-table-cell">01/01/2023</td>
-												<td class="d-none d-xl-table-cell">31/06/2023</td>
-												<td><span class="badge bg-danger">Cancelled</span></td>
-												<td class="d-none d-md-table-cell">William Harris</td>
-											</tr>
-											<tr>
-												<td>Project Hades</td>
-												<td class="d-none d-xl-table-cell">01/01/2023</td>
-												<td class="d-none d-xl-table-cell">31/06/2023</td>
-												<td><span class="badge bg-success">Done</span></td>
-												<td class="d-none d-md-table-cell">Sharon Lessman</td>
-											</tr>
-											<tr>
-												<td>Project Nitro</td>
-												<td class="d-none d-xl-table-cell">01/01/2023</td>
-												<td class="d-none d-xl-table-cell">31/06/2023</td>
-												<td><span class="badge bg-warning">In progress</span></td>
-												<td class="d-none d-md-table-cell">Vanessa Tucker</td>
-											</tr>
-											<tr>
-												<td>Project Phoenix</td>
-												<td class="d-none d-xl-table-cell">01/01/2023</td>
-												<td class="d-none d-xl-table-cell">31/06/2023</td>
-												<td><span class="badge bg-success">Done</span></td>
-												<td class="d-none d-md-table-cell">William Harris</td>
-											</tr>
-											<tr>
-												<td>Project X</td>
-												<td class="d-none d-xl-table-cell">01/01/2023</td>
-												<td class="d-none d-xl-table-cell">31/06/2023</td>
-												<td><span class="badge bg-success">Done</span></td>
-												<td class="d-none d-md-table-cell">Sharon Lessman</td>
-											</tr>
-											<tr>
-												<td>Project Romeo</td>
-												<td class="d-none d-xl-table-cell">01/01/2023</td>
-												<td class="d-none d-xl-table-cell">31/06/2023</td>
-												<td><span class="badge bg-success">Done</span></td>
-												<td class="d-none d-md-table-cell">Christina Mason</td>
-											</tr>
-											<tr>
-												<td>Project Wombat</td>
-												<td class="d-none d-xl-table-cell">01/01/2023</td>
-												<td class="d-none d-xl-table-cell">31/06/2023</td>
-												<td><span class="badge bg-warning">In progress</span></td>
-												<td class="d-none d-md-table-cell">William Harris</td>
-											</tr>
-										</tbody>
-									</table>
-								</div>
-							</div>
-
 			</main>
 				<div class="container-fluid">
 					<div class="row text-muted">
 						<div class="col-6 text-start">
 							<p class="mb-0">
 								<a class="text-muted" href="https://adminkit.io/"
-									target="_blank"><strong>AdminKit</strong></a> - <a class="text-muted"
-									href="https://adminkit.io/" target="_blank"><strong>Bootstrap Admin
-										Template</strong></a> &copy;
+									target="_blank"><strong></strong></a> <a class="text-muted"
+									href="https://adminkit.io/" target="_blank"><strong>Morgan's Ticketing System</strong></a> &copy; 2026
 							</p>
 						</div>
 						<div class="col-6 text-end">
@@ -296,27 +226,40 @@ $agent = $userModel->getUserById($agentId);
 						}]
 					},
 					options: {
-						responsive: true,
-						maintainAspectRatio: true,
-						legend: {
-							position: 'bottom',
-							labels: {
-								padding: 15,
-								usePointStyle: true
-							}
-						},
-						tooltips: {
-							callbacks: {
-								label: function(tooltipItem, data) {
-									const label = data.labels[tooltipItem.index] || '';
-									const value = data.datasets[0].data[tooltipItem.index];
-									const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
-									const percentage = ((value / total) * 100).toFixed(1);
-									return label + ': ' + value + ' (' + percentage + '%)';
-								}
-							}
-						}
-					}
+    responsive: true,
+    maintainAspectRatio: true,
+
+    onClick: function(evt, item) {
+        if(item.length > 0){
+            const status = statusLabels[item[0]._index]
+                .toLowerCase()
+                .replace(' ', '_');
+
+            window.location.href =
+                "agentTickets.php?status=" + status + "&agent=<?= $agentId ?>";
+        }
+    },
+
+    legend: {
+        position: 'bottom',
+        labels: {
+            padding: 15,
+            usePointStyle: true
+        }
+    },
+
+    tooltips: {
+        callbacks: {
+            label: function(tooltipItem, data) {
+                const label = data.labels[tooltipItem.index] || '';
+                const value = data.datasets[0].data[tooltipItem.index];
+                const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
+                const percentage = ((value / total) * 100).toFixed(1);
+                return label + ': ' + value + ' (' + percentage + '%)';
+            }
+        }
+    }
+}
 				});
 			}
 			<?php endif; ?>

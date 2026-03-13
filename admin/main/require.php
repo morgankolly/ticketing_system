@@ -11,4 +11,6 @@ require_once APPROOT .  '/admin/controllers/CategoryController.php';
 require_once APPROOT .  '/admin/controllers/TicketController.php';
 require_once APPROOT .  '/admin/controllers/RolesController.php';
 require_once APPROOT .  '/admin/controllers/ContactController.php';
+require_once APPROOT .  '/admin/controllers/notificationController.php';
+
 

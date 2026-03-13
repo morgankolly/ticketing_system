@@ -7,6 +7,9 @@ require_once __DIR__ . '/../helpers/functions.php';
 require_once __DIR__ . '/../models/notificationModel.php';
 $TicketModel = new TicketModel($pdo);
 $UserModel = new UserModel($pdo);
+
+
+
 if (isset($_POST['createTicket'])) {
 
     try {
@@ -31,7 +34,13 @@ if (isset($_POST['createTicket'])) {
             'close_token' => $closeToken,
             'message_id' => $messageId // 👈 ADD THIS to store in database
         ];
+        // check the category id
+        // find a user with that category id
+        // after getting that user , create the ticket
+        // get the reference number of the created ticked 
+        // assign that ticket with the ref number the id of the user
 
+        // 
         if (empty($data['title']) || empty($data['description']) || empty($data['email'])) {
             throw new Exception("Please fill in all required fields.");
         }
@@ -88,12 +97,10 @@ if (isset($_POST['assign_ticket'])) {
         $userId = isset($_POST['user_id']) ? (int) $_POST['user_id'] : 0;
         $priority = ucfirst(strtolower($_POST['priority'] ?? 'Medium'));
 
-        // 2️⃣ Validate inputs
+
         if (empty($ticketRef) || $userId <= 0) {
             throw new Exception("Ticket reference or agent is missing.");
         }
-
-        // Optional: validate allowed priorities
         $allowedPriorities = ['Low', 'Medium', 'High', 'Urgent'];
         if (!in_array($priority, $allowedPriorities)) {
             $priority = 'Medium';
@@ -216,6 +223,10 @@ $agents = $agentsStmt->fetchAll(PDO::FETCH_ASSOC);
 
 
 
+
+
+
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_comment'])) {
     if (!isset($_SESSION['user_id']) || $_SESSION['role_id'] != 2) {
         exit('Unauthorized');
@@ -263,7 +274,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_comment'])) {
             ':reference' => $ticketRef
         ]);
 
-        $closeLink = "https://localhost/ticketing-system/admin/close_ticket.php?ref="
+        $closeLink = "https://localhost/ticketing/ticketing_system/admin/close_ticket.php?ref="
             . urlencode($ticketRef)
             . "&token=" . urlencode($token);
 
@@ -313,4 +324,14 @@ if (!empty($ticketRef)) {
     $ticket = $TicketModel->getTicketByReference($ticketRef);
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reference'])) {
 
+    $reference = $_POST['reference'];
+
+    require_once 'models/TicketModel.php';
+
+    sendTicketForReassignment($pdo, $reference);
+
+    header("Location: agentTickets.php?success=Ticket returned for reassignment");
+    exit;
+}

@@ -78,6 +78,12 @@ if (!isset($role_id)) {
                 </li>
 
 
+                <li class="sidebar-item">
+                    <a class="sidebar-link" href="faqs.php">
+                        <i class="align-middle" data-feather="bell"></i> <span
+                            class="align-middle">FAQs</span>
+                    </a>
+                </li>
 
             </ul>
 

@@ -8,6 +8,7 @@ include_once __DIR__. '/../models/CategoryModel.php';
 include_once __DIR__. '/../models/TicketModel.php';
 include_once __DIR__. '/../models/RoleModel.php';
 include_once __DIR__. '/../models/ContactModel.php';
+include_once __DIR__. '/../models/notificationModel.php';
 
 
 
@@ -17,5 +18,6 @@ $CategoryModel = new CategoryModel( $pdo);
 $TicketModel = new TicketModel( $pdo);
 $RoleModel = new RoleModel( $pdo);
 $ContactModel = new ContactModel( $pdo);
+$notificationModel = new $notificationModel($pdo);
 
 
