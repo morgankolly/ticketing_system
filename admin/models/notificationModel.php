@@ -113,4 +113,65 @@ class NotificationModel {
             return 0;
         }
     }
+    public function getAllNotifications()
+{
+    $stmt = $this->pdo->query("
+        SELECT n.*, t.reference
+        FROM notifications n
+        LEFT JOIN tickets t ON t.ticket_id = n.ticket_id
+        ORDER BY n.created_at DESC
+    ");
+
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+public function getUnreadCount()
+{
+    $stmt = $this->pdo->query("
+        SELECT COUNT(*) 
+        FROM notifications 
+        WHERE is_read = 0
+    ");
+
+    return $stmt->fetchColumn();
+}
+public function markAllAsRead()
+{
+    $stmt = $this->pdo->prepare("
+        UPDATE notifications 
+        SET is_read = 1 
+        WHERE is_read = 0
+    ");
+
+    $stmt->execute();
+}
+
+
+
+  public function getNotificationsByAgent(int $agentId): array {
+    $stmt = $this->pdo->prepare("
+        SELECT * FROM notifications 
+        WHERE agent_id = :agent_id 
+        ORDER BY created_at DESC
+    ");
+    $stmt->execute(['agent_id' => $agentId]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+public function getUnreadCountByAgent(int $agentId): int {
+    $stmt = $this->pdo->prepare("
+        SELECT COUNT(*) FROM notifications 
+        WHERE agent_id = :id AND is_read = 0
+    ");
+    $stmt->execute(['id' => $agentId]);
+    return (int)$stmt->fetchColumn();
+}
+
+public function markAllAsReadByAgent(int $agentId): void {
+    $stmt = $this->pdo->prepare("
+        UPDATE notifications 
+        SET is_read = 1 
+        WHERE agent_id = :id AND is_read = 0
+    ");
+    $stmt->execute(['id' => $agentId]);
+}
 }

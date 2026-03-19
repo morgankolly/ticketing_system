@@ -292,17 +292,16 @@ public function sendCustomerEmail($data, $ticketRef) {
         null                 // No inReplyTo for first email
     );
 }
-    public function getTicketByReference(string $ticketRef): ?array
-    {
-        $stmt = $this->pdo->prepare("
-                SELECT * FROM tickets 
-                WHERE reference = :reference 
-                LIMIT 1
-            ");
-        $stmt->execute([':reference' => $ticketRef]);
-        $ticket = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $ticket ?: null;
+   public function getTicketByReference(?string $ticketRef)
+{
+    if (!$ticketRef) {
+        return null;
     }
+
+    $stmt = $this->pdo->prepare("SELECT * FROM tickets WHERE reference = ?");
+    $stmt->execute([$ticketRef]);
+    return $stmt->fetch(PDO::FETCH_ASSOC);
+}
 
 
     public function assignTicket($reference, $userId, $priority)
@@ -361,39 +360,47 @@ public function sendCustomerEmail($data, $ticketRef) {
 
 
 
+
     public function getTicketCommentsThread(string $ticketRef): array
-    {
-        // Step 1: Get ticket_id from tickets table
-        $stmt = $this->pdo->prepare("
-        SELECT ticket_id 
-        FROM tickets 
-        WHERE reference = :reference 
+{
+    if (empty($ticketRef)) {
+        return [];
+    }
+
+    // Get ticket ID from reference
+    $stmt = $this->pdo->prepare("
+        SELECT ticket_id
+        FROM tickets
+        WHERE reference = :reference
         LIMIT 1
     ");
-        $stmt->execute([':reference' => $ticketRef]);
-        $ticket = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    $stmt->execute([':reference' => $ticketRef]);
+    $ticket = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if (!$ticket) {
-            return [];
-        }
+    if (!$ticket) {
+        return [];
+    }
 
-        $ticketId = (int) $ticket['ticket_id'];
+    $ticketId = (int) $ticket['ticket_id'];
 
-        // Step 2: Get comments using ticket_id (NOT reference)
-        $stmt = $this->pdo->prepare("
-        SELECT tc.*, 
-               COALESCE(u.user_name, 'Agent') AS commenter_name
+    // Fetch ticket comments
+    $stmt = $this->pdo->prepare("
+        SELECT 
+            tc.*, 
+            COALESCE(u.user_name, 'Agent') AS commenter_name
         FROM ticket_comments tc
         LEFT JOIN users u ON u.user_id = tc.agent_id
         WHERE tc.ticket_id = :ticket_id
         ORDER BY tc.created_at ASC
     ");
-        $stmt->execute([':ticket_id' => $ticketId]);
 
-        $comments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $stmt->execute([':ticket_id' => $ticketId]);
 
-        return $this->buildCommentTree($comments);
-    }
+    $comments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    return $this->buildCommentTree($comments);
+}
 
 
     private function buildCommentTree(array $comments, ?int $parentId = null): array

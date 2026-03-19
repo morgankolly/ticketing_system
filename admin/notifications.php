@@ -1,35 +1,39 @@
 <?php
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
 
-include_once __DIR__ . '/compents/header.php';  // ← typo? should be components/header.php ?
+include_once __DIR__ . '/compents/header.php';
 include_once __DIR__ . '/helpers/functions.php';
 include_once __DIR__ . '/config/connection.php';
 
-// Get all notifications (newest first)
+// Notifications
 $stmt = $pdo->query("
     SELECT * 
     FROM notifications 
     ORDER BY created_at DESC
 ");
-$notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Mark all as read (you can make this more selective later)
-$pdo->query("UPDATE notifications SET is_read = 1 WHERE is_read = 0");
+$notifications = $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
 
-
+// Tickets
 $ticket_stmt = $pdo->query("
     SELECT * 
     FROM tickets 
     WHERE is_read = 0 
     ORDER BY created_at DESC
 ");
-$new_tickets = $ticket_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+$new_tickets = $ticket_stmt ? $ticket_stmt->fetchAll(PDO::FETCH_ASSOC) : [];
 $new_ticket_count = count($new_tickets);
 
-// Mark tickets as read (optional — many systems keep them unread until viewed)
-$pdo->query("UPDATE tickets SET is_read = 1 WHERE is_read = 0");
+// Mark as read
+if (!empty($notifications)) {
+    $pdo->query("UPDATE notifications SET is_read = 1 WHERE is_read = 0");
+}
+
+if (!empty($new_tickets)) {
+    $pdo->query("UPDATE tickets SET is_read = 1 WHERE is_read = 0");
+}
 ?>
 
 <!DOCTYPE html>

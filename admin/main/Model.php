@@ -18,6 +18,6 @@ $CategoryModel = new CategoryModel( $pdo);
 $TicketModel = new TicketModel( $pdo);
 $RoleModel = new RoleModel( $pdo);
 $ContactModel = new ContactModel( $pdo);
-$notificationModel = new $notificationModel($pdo);
+
 
 

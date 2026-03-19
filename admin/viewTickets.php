@@ -109,7 +109,7 @@ if (!empty($viewRef)) {
                             class="btn btn-primary btn-lg">
                             <i class="align-middle" data-feather="message-square"></i> View & Reply Comments
                         </a>
-              <?php if ($ticket['status'] !== 'reassign_requested'): ?>
+             <?php if (($ticket['status'] ?? null) !== 'reassign_requested'): ?>
 <form method="POST">
     <input type="hidden" name="reference" value="<?= $ticket['reference'] ?>">
     <button type="submit" class="btn btn-warning">

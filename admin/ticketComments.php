@@ -1,27 +1,42 @@
 <?php
 
 session_start();
-error_reporting(E_ALL);
 ini_set('display_errors', 1);
+error_reporting(E_ALL);
 
-require_once 'config/connection.php';
-require_once 'models/TicketModel.php';
-require_once 'compents/agentHeader.php';
-require_once 'helpers/functions.php';
-require_once 'controllers/TicketController.php';
-require_once 'controllers/UserController.php';
+require_once __DIR__ . '/config/connection.php';
+require_once __DIR__ . '/models/TicketModel.php';
+require_once __DIR__ . '/compents/agentHeader.php';
+require_once __DIR__ . '/controllers/TicketController.php';
 
 $ticketModel = new TicketModel($pdo);
-$ticketRef = $_GET['ticket_ref'] ?? null;
 
+// 1️⃣ Get reference
+$ticketRef = trim($_GET['ticket_ref'] ?? $_GET['reference'] ?? '');
 
+if ($ticketRef === '') {
+    die("Ticket reference missing or invalid.");
+}
 
+// 2️⃣ Fetch ticket
 $ticket = $ticketModel->getTicketByReference($ticketRef);
+
+if (!$ticket) {
+    die("Ticket not found for reference: " . htmlspecialchars($ticketRef));
+}
+
+// ✅ Extract ID
+$ticketId = (int)$ticket['ticket_id'];
+
+// 3️⃣ Fetch comments
 $comments = $ticketModel->getTicketCommentsThread($ticketRef);
+
+if (!is_array($comments)) {
+    $comments = [];
+}
 
 
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 

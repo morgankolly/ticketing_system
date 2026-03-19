@@ -42,4 +42,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $ticket = $ticketModel->findTicket($ticket['reference']);
 }
 
+$notificationModel = new NotificationModel($pdo);
+
+// Get notifications
+$notifications = $notificationModel->getAllNotifications();
+
+// Get unread count
+$unreadCount = $notificationModel->getUnreadCount();
+
+// Mark notifications as read
+$notificationModel->markAllAsRead();
+
 }

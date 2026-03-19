@@ -21,19 +21,27 @@ class FAQModel {
 
     // Check if FAQ exists
     public function exists($title) {
-        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM faqs WHERE question = :title");
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM faqs WHERE title = :title");
         $stmt->execute(['title' => $title]);
         return $stmt->fetchColumn() > 0;
     }
 
     // Insert FAQ
-    public function insertFAQ($question, $answer) {
-        $stmt = $this->pdo->prepare("
-            INSERT INTO faqs (question, answer, created_at)
-            VALUES (:question, :answer, NOW())
-        ");
-        return $stmt->execute(['question' => $question, 'answer' => $answer]);
-    }
+   public function insertFAQ($title, $answer)
+{
+    $reference = 'FAQ-' . time(); // generate reference
+
+    $stmt = $this->pdo->prepare("
+        INSERT INTO faqs (reference, title, answer)
+        VALUES (:reference, :title, :answer)
+    ");
+
+    return $stmt->execute([
+        ':reference' => $reference,
+        ':title' => $title,
+        ':answer' => $answer
+    ]);
+}
 
     // Get ticket by reference
     public function getTicketByReference($reference) {

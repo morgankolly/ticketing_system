@@ -2,10 +2,10 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
- include_once __DIR__ . '/compents/header.php'; 
- require_once __DIR__ . '/config/connection.php';
- require_once __DIR__ . '/controllers/UserController.php';
- require_once __DIR__ . '/helpers/functions.php';
+include_once __DIR__ . '/compents/header.php';
+require_once __DIR__ . '/config/connection.php';
+require_once __DIR__ . '/controllers/UserController.php';
+require_once __DIR__ . '/helpers/functions.php';
 require_once __DIR__ . '/controllers/TicketController.php';
 require_once __DIR__ . '/models/TicketModel.php';
 
@@ -55,7 +55,18 @@ $avgFirstResponseMinutes = $pdo->query("
 
 $avgFirstResponseMinutes = $avgFirstResponseMinutes !== null ? (float) $avgFirstResponseMinutes : 0.;
 
+$ticketsPerDay = $pdo->query("
+SELECT DATE(created_at) as day, COUNT(*) as total
+FROM tickets
+GROUP BY DATE(created_at)
+ORDER BY day ASC
+")->fetchAll(PDO::FETCH_ASSOC);
 
+$priorityChart = $pdo->query("
+SELECT priority, COUNT(*) as total
+FROM tickets
+GROUP BY priority
+")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -82,175 +93,216 @@ $avgFirstResponseMinutes = $avgFirstResponseMinutes !== null ? (float) $avgFirst
 </head>
 
 <body>
-	
 
-			<main class="content">
-				<div class="container-fluid p-0">
 
-					<h1 class="h3 mb-3"><strong>Ticket</strong> Analytics</h1>
+	<main class="content">
+		<div class="container-fluid p-0">
 
-					<div class="row">
-						<div class="col-xl-6 col-xxl-5 d-flex">
-							<div class="w-100">
-								<div class="row">
-									<div class="col-sm-6">
-										<div class="card ticket-stat-card stat-open">
-											<div class="card-body">
-												<div class="row">
-													<div class="col mt-0">
-														<h5 class="card-title">
-															<i class="align-middle me-2" data-feather="ticket" style="width: 18px; height: 18px;"></i>
-															Total Tickets
-														</h5>
-													</div>
-													<div class="col-auto">
-														<div class="stat text-primary">
-															<i class="align-middle" data-feather="ticket"></i>
-														</div>
-													</div>
+			<h1 class="h3 mb-3"><strong>Ticket</strong> Analytics</h1>
+
+			<div class="row">
+				<div class="col-xl-6 col-xxl-5 d-flex">
+					<div class="w-100">
+						<div class="row">
+							<div class="col-sm-6">
+								<div class="card ticket-stat-card stat-open">
+									<div class="card-body">
+										<div class="row">
+											<div class="col mt-0">
+												<h5 class="card-title">
+													<i class="align-middle me-2" data-feather="ticket"
+														style="width: 18px; height: 18px;"></i>
+													Total Tickets
+												</h5>
+											</div>
+											<div class="col-auto">
+												<div class="stat text-primary">
+													<i class="align-middle" data-feather="ticket"></i>
 												</div>
-												<h1 class="mt-1 mb-3 ticket-stat-number">
-													<?= (int) $totalTickets ?>
-												</h1>
-												<div class="ticket-stat-label">All Tickets</div>
 											</div>
 										</div>
-										<div class="card ticket-stat-card">
-											<div class="card-body">
-												<div class="row">
-													<div class="col mt-0">
-														<h5 class="card-title">
-															<i class="align-middle me-2" data-feather="message-circle" style="width: 18px; height: 18px;"></i>
-															Total Messages
-														</h5>
-													</div>
-													<div class="col-auto">
-														<div class="stat text-primary">
-															<i class="align-middle" data-feather="message-circle"></i>
-														</div>
-													</div>
-												</div>
-												<h1 class="mt-1 mb-3 ticket-stat-number">
-													<?= (int) $totalMessages ?>
-												</h1>
-												<div class="ticket-stat-label">All Comments</div>
-											</div>
-										</div>
+										<h1 class="mt-1 mb-3 ticket-stat-number">
+											<?= (int) $totalTickets ?>
+										</h1>
+										<div class="ticket-stat-label">All Tickets</div>
 									</div>
-									<div class="col-sm-6">
-										<div class="card ticket-stat-card">
-											<div class="card-body">
-												<div class="row">
-													<div class="col mt-0">
-														<h5 class="card-title">
-															<i class="align-middle me-2" data-feather="clock" style="width: 18px; height: 18px;"></i>
-															Avg. First Response
-														</h5>
-													</div>
-													<div class="col-auto">
-														<div class="stat text-primary">
-															<i class="align-middle" data-feather="clock"></i>
-														</div>
-													</div>
+								</div>
+								<div class="card ticket-stat-card">
+									<div class="card-body">
+										<div class="row">
+											<div class="col mt-0">
+												<h5 class="card-title">
+													<i class="align-middle me-2" data-feather="message-circle"
+														style="width: 18px; height: 18px;"></i>
+													Total Messages
+												</h5>
+											</div>
+											<div class="col-auto">
+												<div class="stat text-primary">
+													<i class="align-middle" data-feather="message-circle"></i>
 												</div>
-												<h1 class="mt-1 mb-3 ticket-stat-number">
-													<?= number_format($avgFirstResponseMinutes, 1) ?> <small style="font-size: 1.5rem;">min</small>
-												</h1>
-												<div class="ticket-stat-label">Response Time</div>
 											</div>
 										</div>
-										<div class="card ticket-stat-card stat-in-progress">
-											<div class="card-body">
-												<div class="row">
-													<div class="col mt-0">
-														<h5 class="card-title">
-															<i class="align-middle me-2" data-feather="alert-triangle" style="width: 18px; height: 18px;"></i>
-															Critical Tickets
-														</h5>
-													</div>
-													<div class="col-auto">
-														<div class="stat text-primary">
-															<i class="align-middle" data-feather="alert-triangle"></i>
-														</div>
-													</div>
-												</div>
-												<?php
-												$criticalTickets = 0;
-												foreach ($priorityStats as $row) {
-													if (in_array(strtolower($row['priority']), ['high', 'urgent'], true)) {
-														$criticalTickets += (int) $row['total'];
-													}
-												}
-												?>
-												<h1 class="mt-1 mb-3 ticket-stat-number">
-													<?= (int) $criticalTickets ?>
-												</h1>
-												<div class="ticket-stat-label">High & Urgent</div>
-											</div>
-										</div>
+										<h1 class="mt-1 mb-3 ticket-stat-number">
+											<?= (int) $totalMessages ?>
+										</h1>
+										<div class="ticket-stat-label">All Comments</div>
 									</div>
 								</div>
 							</div>
-						</div>
-
-						<div class="col-xl-6 col-xxl-7">
-							<div class="card flex-fill w-100">
-								<div class="card-header">
-									<h5 class="card-title mb-0">
-										<i class="align-middle me-2" data-feather="pie-chart"></i>
-										Tickets by Status
-									</h5>
-								</div>
-								<div class="card-body py-3">
-									<?php if (!empty($statusStats)): ?>
-										<div class="chart chart-sm">
-											<canvas id="ticketStatusPieChart"></canvas>
+							<div class="col-sm-6">
+								<div class="card ticket-stat-card">
+									<div class="card-body">
+										<div class="row">
+											<div class="col mt-0">
+												<h5 class="card-title">
+													<i class="align-middle me-2" data-feather="clock"
+														style="width: 18px; height: 18px;"></i>
+													Avg. First Response
+												</h5>
+											</div>
+											<div class="col-auto">
+												<div class="stat text-primary">
+													<i class="align-middle" data-feather="clock"></i>
+												</div>
+											</div>
 										</div>
-									<?php else: ?>
-										<p class="text-center text-muted mb-0">No tickets yet.</p>
-									<?php endif; ?>
+										<h1 class="mt-1 mb-3 ticket-stat-number">
+											<?= number_format($avgFirstResponseMinutes, 1) ?> <small
+												style="font-size: 1.5rem;">min</small>
+										</h1>
+										<div class="ticket-stat-label">Response Time</div>
+									</div>
+								</div>
+								<div class="card ticket-stat-card stat-in-progress">
+									<div class="card-body">
+										<div class="row">
+											<div class="col mt-0">
+												<h5 class="card-title">
+													<i class="align-middle me-2" data-feather="alert-triangle"
+														style="width: 18px; height: 18px;"></i>
+													Critical Tickets
+												</h5>
+											</div>
+											<div class="col-auto">
+												<div class="stat text-primary">
+													<i class="align-middle" data-feather="alert-triangle"></i>
+												</div>
+											</div>
+										</div>
+										<?php
+										$criticalTickets = 0;
+										foreach ($priorityStats as $row) {
+											if (in_array(strtolower($row['priority']), ['high', 'urgent'], true)) {
+												$criticalTickets += (int) $row['total'];
+											}
+										}
+										?>
+										<h1 class="mt-1 mb-3 ticket-stat-number">
+											<?= (int) $criticalTickets ?>
+										</h1>
+										<div class="ticket-stat-label">High & Urgent</div>
+									</div>
 								</div>
 							</div>
-						</div>
-					</div>
-
-					<div class="row">
-
-
-
-
-			</main>
-
-			<footer class="footer">
-				<div class="container-fluid">
-					<div class="row text-muted">
-						<div class="col-6 text-start">
-							<p class="mb-0">
-								<a class="text-muted" href=""
-									target="_blank"><strong></strong></a> <a class="text-muted"
-									href="" target="_blank"><strong>Morgan's Ticketing System</strong></a> &copy;
-							</p>
-						</div>
-						<div class="col-6 text-end">
-							<ul class="list-inline">
-								<li class="list-inline-item">
-									<a class="text-muted" href="https://adminkit.io/" target="_blank">Support</a>
-								</li>
-								<li class="list-inline-item">
-									<a class="text-muted" href="https://adminkit.io/" target="_blank">Help Center</a>
-								</li>
-								<li class="list-inline-item">
-									<a class="text-muted" href="https://adminkit.io/" target="_blank">Privacy</a>
-								</li>
-								<li class="list-inline-item">
-									<a class="text-muted" href="https://adminkit.io/" target="_blank">Terms</a>
-								</li>
-							</ul>
 						</div>
 					</div>
 				</div>
-			</footer>
+
+
+				<div class="col-xl-6 col-xxl-7">
+					<div class="card flex-fill w-100">
+						<div class="card-header">
+							<h5 class="card-title mb-0">
+								<i class="align-middle me-2" data-feather="pie-chart"></i>
+								Tickets by Status
+							</h5>
+						</div>
+						<div class="card-body py-3">
+							<?php if (!empty($statusStats)): ?>
+								<div class="chart chart-sm">
+									<canvas id="ticketStatusPieChart"></canvas>
+								</div>
+							<?php else: ?>
+								<p class="text-center text-muted mb-0">No tickets yet.</p>
+							<?php endif; ?>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="row">
+
+
+				<div class="row">
+
+					<div class="col-xl-12">
+						<div class="card">
+
+							<div class="card-header">
+								<h5 class="card-title">
+									<i data-feather="activity"></i>
+									Tickets Created Per Day
+								</h5>
+							</div>
+
+							<div class="card-body">
+								<canvas id="ticketsPerDayChart"></canvas>
+							</div>
+
+						</div>
+					</div>
+
+				</div>
+				<div class="col-xl-6">
+
+					<div class="card">
+
+						<div class="card-header">
+							<h5 class="card-title">
+								<i data-feather="bar-chart-2"></i>
+								Tickets by Priority
+							</h5>
+						</div>
+
+						<div class="card-body">
+							<canvas id="priorityChart"></canvas>
+						</div>
+
+					</div>
+
+				</div>
+	</main>
+
+	<footer class="footer">
+		<div class="container-fluid">
+			<div class="row text-muted">
+				<div class="col-6 text-start">
+					<p class="mb-0">
+						<a class="text-muted" href="" target="_blank"><strong></strong></a> <a class="text-muted"
+							href="" target="_blank"><strong>Morgan's Ticketing System</strong></a> &copy;
+					</p>
+				</div>
+				<div class="col-6 text-end">
+					<ul class="list-inline">
+						<li class="list-inline-item">
+							<a class="text-muted" href="https://adminkit.io/" target="_blank">Support</a>
+						</li>
+						<li class="list-inline-item">
+							<a class="text-muted" href="https://adminkit.io/" target="_blank">Help Center</a>
+						</li>
+						<li class="list-inline-item">
+							<a class="text-muted" href="https://adminkit.io/" target="_blank">Privacy</a>
+						</li>
+						<li class="list-inline-item">
+							<a class="text-muted" href="https://adminkit.io/" target="_blank">Terms</a>
+						</li>
+					</ul>
+				</div>
+			</div>
 		</div>
+	</footer>
+	</div>
 	</div>
 
 	<!-- Chart.js CDN (fallback if not in app.js) -->
@@ -259,76 +311,150 @@ $avgFirstResponseMinutes = $avgFirstResponseMinutes !== null ? (float) $avgFirst
 
 	<script>
 		// Wait for Chart.js to be available
-		document.addEventListener('DOMContentLoaded', function() {
+		document.addEventListener('DOMContentLoaded', function () {
 			<?php if (!empty($statusStats)): ?>
-			// Check if Chart is available
-			if (typeof Chart === 'undefined') {
-				console.error('Chart.js is not loaded');
-				return;
-			}
-			
-			const statusData = <?= json_encode($statusStats) ?>;
-			
-			// Extract labels and data
-			const statusLabels = statusData.map(item => item.status);
-			const statusCounts = statusData.map(item => parseInt(item.total));
-			
-			// Color palette for different statuses
-			const statusColors = {
-				'open': '#3b82f6',      // Blue
-				'in_progress': '#f59e0b', // Amber
-				'resolved': '#10b981',    // Green
-				'closed': '#6b7280',      // Gray
-				'pending': '#ef4444'       // Red
-			};
-			
-			// Generate colors array based on status
-			const backgroundColors = statusLabels.map(status => {
-				const normalizedStatus = status.toLowerCase().replace(/\s+/g, '_');
-				return statusColors[normalizedStatus] || '#8b5cf6'; // Default purple
-			});
-			
-			// Create pie chart
-			const ctx = document.getElementById('ticketStatusPieChart');
-			if (ctx) {
-				new Chart(ctx, {
-					type: 'pie',
-					data: {
-						labels: statusLabels,
-						datasets: [{
-							data: statusCounts,
-							backgroundColor: backgroundColors,
-							borderColor: '#ffffff',
-							borderWidth: 2
-						}]
-					},
-					options: {
-						responsive: true,
-						maintainAspectRatio: true,
-						legend: {
-							position: 'bottom',
-							labels: {
-								padding: 15,
-								usePointStyle: true
-							}
+				// Check if Chart is available
+				if (typeof Chart === 'undefined') {
+					console.error('Chart.js is not loaded');
+					return;
+				}
+
+				const statusData = <?= json_encode($statusStats) ?>;
+
+				// Extract labels and data
+				const statusLabels = statusData.map(item => item.status);
+				const statusCounts = statusData.map(item => parseInt(item.total));
+
+				// Color palette for different statuses
+				const statusColors = {
+					'open': '#3b82f6',      // Blue
+					'in_progress': '#f59e0b', // Amber
+					'resolved': '#10b981',    // Green
+					'closed': '#6b7280',      // Gray
+					'pending': '#ef4444'       // Red
+				};
+
+				// Generate colors array based on status
+				const backgroundColors = statusLabels.map(status => {
+					const normalizedStatus = status.toLowerCase().replace(/\s+/g, '_');
+					return statusColors[normalizedStatus] || '#8b5cf6'; // Default purple
+				});
+
+				// Create pie chart
+				const ctx = document.getElementById('ticketStatusPieChart');
+				if (ctx) {
+					new Chart(ctx, {
+						type: 'pie',
+						data: {
+							labels: statusLabels,
+							datasets: [{
+								data: statusCounts,
+								backgroundColor: backgroundColors,
+								borderColor: '#ffffff',
+								borderWidth: 2
+							}]
 						},
-						tooltips: {
-							callbacks: {
-								label: function(tooltipItem, data) {
-									const label = data.labels[tooltipItem.index] || '';
-									const value = data.datasets[0].data[tooltipItem.index];
-									const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
-									const percentage = ((value / total) * 100).toFixed(1);
-									return label + ': ' + value + ' (' + percentage + '%)';
+						options: {
+							responsive: true,
+							maintainAspectRatio: true,
+							legend: {
+								position: 'bottom',
+								labels: {
+									padding: 15,
+									usePointStyle: true
+								}
+							},
+							tooltips: {
+								callbacks: {
+									label: function (tooltipItem, data) {
+										const label = data.labels[tooltipItem.index] || '';
+										const value = data.datasets[0].data[tooltipItem.index];
+										const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
+										const percentage = ((value / total) * 100).toFixed(1);
+										return label + ': ' + value + ' (' + percentage + '%)';
+									}
 								}
 							}
 						}
-					}
-				});
-			}
+					});
+				}
 			<?php endif; ?>
 		});
+		const ticketDayData = <?= json_encode($ticketsPerDay) ?>;
+
+		const dayLabels = ticketDayData.map(item => item.day);
+		const dayCounts = ticketDayData.map(item => parseInt(item.total));
+
+		const ctxDay = document.getElementById("ticketsPerDayChart");
+
+		if (ctxDay) {
+
+			new Chart(ctxDay, {
+				type: 'line',
+
+				data: {
+					labels: dayLabels,
+
+					datasets: [{
+						label: 'Tickets Created',
+						data: dayCounts,
+						fill: false,
+						borderWidth: 3,
+						tension: 0.3
+					}]
+				},
+
+				options: {
+					responsive: true,
+					scales: {
+						yAxes: [{
+							ticks: {
+								beginAtZero: true
+							}
+						}]
+					}
+				}
+
+			});
+
+			const priorityData = <?= json_encode($priorityChart) ?>;
+
+			const priorityLabels = priorityData.map(item => item.priority);
+			const priorityCounts = priorityData.map(item => parseInt(item.total));
+
+			const ctxPriority = document.getElementById("priorityChart");
+
+			if (ctxPriority) {
+
+				new Chart(ctxPriority, {
+					type: 'bar',
+
+					data: {
+						labels: priorityLabels,
+						datasets: [{
+							label: 'Tickets',
+							data: priorityCounts,
+							borderWidth: 2
+						}]
+					},
+
+					options: {
+						responsive: true,
+						scales: {
+							yAxes: [{
+								ticks: {
+									beginAtZero: true
+								}
+							}]
+						}
+					}
+
+				});
+
+			}
+		}
 	</script>
 
 </body>
+
 </html>
