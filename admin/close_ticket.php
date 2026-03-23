@@ -1,28 +1,72 @@
 <?php
-// Show all errors for debugging
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-require_once __DIR__ . '/config/connection.php'; // adjust if your config is outside admin
+require_once __DIR__ . '/config/connection.php';
 require_once __DIR__ . '/models/TicketModel.php';
 
-$ticketRef = $_GET['ref'] ?? '';
-$token = $_GET['token'] ?? '';
+$reference = $_GET['ref'] ?? '';
 
-if (!$ticketRef || !$token) {
-    exit("Invalid request.");
+if (!$reference) {
+    exit("Invalid ticket reference.");
 }
 
-$ticketModel = new TicketModel($pdo);
+// Close ticket using reference
+$stmt = $pdo->prepare("
+    UPDATE tickets 
+    SET status = 'closed' 
+    WHERE reference = ?
+");
+$stmt->execute([$reference]);
 
-// Try to close the ticket
-$result = $ticketModel->closeTicketByEmail($ticketRef, $token);
-
-if ($result) {
-    echo "<script>
-                alert('Ticket closed successfully thank you!');
-                window.location.href='../index.php';
-              </script>";
-} else {
-    echo "Invalid link or ticket already closed.";
+if ($stmt->rowCount() == 0) {
+    exit("Ticket not found or already closed.");
 }
+
+
+
+// Get ticket information
+$ticket = $pdo->prepare("
+    SELECT reference, title 
+    FROM tickets 
+    WHERE reference = ?
+");
+$ticket->execute([$reference]);
+$data = $ticket->fetch(PDO::FETCH_ASSOC);
+
+$title = $data['title'];
+
+// Get latest agent comment as solution
+$commentStmt = $pdo->prepare("
+    SELECT comment 
+    FROM ticket_comments
+    WHERE reference = (
+        SELECT reference FROM tickets WHERE reference = ?
+    )
+    ORDER BY created_at DESC
+    LIMIT 1
+");
+
+$commentStmt->execute([$reference]);
+$commentData = $commentStmt->fetch(PDO::FETCH_ASSOC);
+
+$answer = $commentData['comment'] ?? 'Solution provided by support team.';
+
+// Prevent duplicate FAQ
+$check = $pdo->prepare("SELECT faq_id FROM faqs WHERE reference = ?");
+$check->execute([$reference]);
+
+if (!$check->fetch()) {
+
+    $faqInsert = $pdo->prepare("
+        INSERT INTO faqs (reference, title, answer)
+        VALUES (?, ?, ?)
+    ");
+
+    $faqInsert->execute([$reference, $title, $answer]);
+}
+
+echo "<script>
+alert('Ticket closed successfully. Thank you!');
+window.location.href='../index.php';
+</script>";

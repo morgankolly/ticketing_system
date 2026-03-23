@@ -7,14 +7,14 @@ require_once __DIR__ . '/../helpers/functions.php';
 require_once __DIR__ . '/../models/notificationModel.php';
 $TicketModel = new TicketModel($pdo);
 $UserModel = new UserModel($pdo);
+
+
+
 if (isset($_POST['createTicket'])) {
 
     try {
 
         $ticketRef = generateTicketRef();
-        $closeToken = bin2hex(random_bytes(32)); // 🔐 Secure close token
-        
-        // ✅ Generate a unique Message-ID for this ticket
         $messageId = "<ticket-{$ticketRef}." . time() . "." . uniqid() . "@localhost>";
 
         $data = [
@@ -28,30 +28,22 @@ if (isset($_POST['createTicket'])) {
             'contact' => $_POST['contact'] ?? null,
             'support_email' => $_POST['support_email'] ?? null,
             'reference' => $ticketRef,
-            'close_token' => $closeToken,
             'message_id' => $messageId // 👈 ADD THIS to store in database
         ];
+        
 
+        // 
         if (empty($data['title']) || empty($data['description']) || empty($data['email'])) {
             throw new Exception("Please fill in all required fields.");
         }
-
-        // Insert ticket (make sure your model supports close_token and message_id)
         $result = $TicketModel->createFullTicket($data, $_FILES['file'] ?? null);
 
         $ticket_id = $result['ticket_id'];
-        
-        // ✅ Store the Message-ID in the tickets table for future replies
+
         $updateStmt = $pdo->prepare("UPDATE tickets SET message_id = ? WHERE reference = ?");
         $updateStmt->execute([$messageId, $ticketRef]);
-
-        // ✅ Generate close link
-        $closeLink = "http://localhost/ticketing-system/admin/closeTicket.php?ref="
-            . urlencode($ticketRef)
-            . "&token="
-            . urlencode($closeToken);
-
-        // Add link to email
+        $closeLink = "http://localhost/ticketing_system/admin/closeTicket.php?ref="
+            . urlencode($ticketRef);
         if (filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
 
             $data['close_link'] = $closeLink; // pass link to email method
@@ -64,16 +56,15 @@ if (isset($_POST['createTicket'])) {
 
         $TicketModel->notifyAdmins($ticket_id, $data['email']);
 
-        echo "<script>
-                alert('Ticket submitted successfully.');
-                window.location.href='index.php';
-              </script>";
-        exit;
+        
 
     } catch (Exception $e) {
 
         $_SESSION['error'] = $e->getMessage();
-        header("Location: index.php");
+        echo "<script>
+                alert('Ticket submitted successfully.');
+                window.location.href='index.php';
+              </script>";
         exit;
     }
 }
@@ -88,12 +79,10 @@ if (isset($_POST['assign_ticket'])) {
         $userId = isset($_POST['user_id']) ? (int) $_POST['user_id'] : 0;
         $priority = ucfirst(strtolower($_POST['priority'] ?? 'Medium'));
 
-        // 2️⃣ Validate inputs
+
         if (empty($ticketRef) || $userId <= 0) {
             throw new Exception("Ticket reference or agent is missing.");
         }
-
-        // Optional: validate allowed priorities
         $allowedPriorities = ['Low', 'Medium', 'High', 'Urgent'];
         if (!in_array($priority, $allowedPriorities)) {
             $priority = 'Medium';
@@ -216,13 +205,18 @@ $agents = $agentsStmt->fetchAll(PDO::FETCH_ASSOC);
 
 
 
+
+
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_comment'])) {
+
     if (!isset($_SESSION['user_id']) || $_SESSION['role_id'] != 2) {
         exit('Unauthorized');
     }
+
     $ticketRef = trim($_POST['ticket_ref'] ?? '');
     $comment = trim($_POST['comment'] ?? '');
-    $parentId = $_POST['parent_comment_id'] ?? null; // can be null
+    $parentId = $_POST['parent_comment_id'] ?? null;
 
     if ($ticketRef === '' || $comment === '') {
         header("Location: ticketComments.php?ticket_ref=" . urlencode($ticketRef));
@@ -230,70 +224,77 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_comment'])) {
     }
 
     $agentId = $_SESSION['user_id'];
-    $stmt = $pdo->prepare("SELECT ticket_id, title, email, message_id FROM tickets WHERE reference = ? LIMIT 1");
+
+    // Get ticket info
+    $stmt = $pdo->prepare("SELECT ticket_id, email, message_id FROM tickets WHERE reference = ? LIMIT 1");
     $stmt->execute([$ticketRef]);
     $ticket = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$ticket) {
         die("Ticket not found.");
     }
+
     $ticketId = $ticket['ticket_id'];
-    $stmt = $pdo->prepare("
-        INSERT INTO ticket_comments 
-        (ticket_id, agent_id, comment, parent_comment_id, reference, created_at)
-        VALUES (?, ?, ?, ?, ?, NOW())
-    ");
-    $stmt->execute([$ticketId, $agentId, $comment, $parentId, $ticketRef]);
+
+
+   $stmt = $pdo->prepare("
+INSERT INTO ticket_comments 
+(ticket_id, agent_id, comment, parent_comment_id, reference, created_at)
+VALUES (?, ?, ?, ?, ?, NOW())
+");
+
+$stmt->execute([
+    $ticketId,
+    $agentId,
+    $comment,
+    $parentId,
+    $ticketRef
+]);
+
     $recipientEmail = $ticket['email'];
+
     if ($recipientEmail && filter_var($recipientEmail, FILTER_VALIDATE_EMAIL)) {
+
         $originalMessageId = $ticket['message_id'] ?? '';
-        $uniqueId = time() . '.' . uniqid() . '.' . $ticketRef;
-        $replyMessageId = "<{$uniqueId}@morgankolly5@gmail.com>";
-        if (empty($originalMessageId)) {
-            $inReplyTo = '';
-            $references = '';
-        } else {
-            $inReplyTo = $originalMessageId;
-            $references = $originalMessageId;
-        }
+
+        $replyMessageId = "<" . time() . "." . uniqid() . "." . $ticketRef . "@morgankolly5@gmail.com>";
+
+        $inReplyTo = $originalMessageId ?: '';
+
+        // generate close token
         $token = bin2hex(random_bytes(32));
-        $stmt = $pdo->prepare("UPDATE tickets SET close_token = :token WHERE reference = :reference");
-        $stmt->execute([
-            ':token' => $token,
-            ':reference' => $ticketRef
-        ]);
 
-        $closeLink = "https://localhost/ticketing-system/admin/close_ticket.php?ref="
-            . urlencode($ticketRef)
-            . "&token=" . urlencode($token);
+        $stmt = $pdo->prepare("UPDATE tickets SET close_token = ? WHERE reference = ?");
+        $stmt->execute([$token, $ticketRef]);
 
-        $emailSubject = "Re: Ticket Received - #{$ticketRef}";
+        $closeLink = "https://localhost/ticketing/ticketing_system/admin/close_ticket.php?ref=" . urlencode($ticketRef);
+
+        $emailSubject = "Re: Ticket #{$ticketRef}";
+
+        // EMAIL TEMPLATE (not stored in DB)
         $emailBody = "
-            <p>Hello,</p>
-            <p>An agent has responded to your ticket:</p>
-            <blockquote style='border-left:3px solid #ccc;padding-left:10px;'>
-                " . nl2br(htmlspecialchars($comment)) . "
-            </blockquote>
-            <p><strong>Ticket Reference:</strong> {$ticketRef}</p>
-            <br><br>
-            If your issue is resolved, you can close your ticket here:<br>
-            <a href='" . htmlspecialchars($closeLink) . "'>Close Ticket</a>
-            <br><br>
-            <p>Support Team</p>
+        {$comment}
+        {$ticketRef}
+
+        {$closeLink}
+
+        Support Team
         ";
+
         sendemail(
             $recipientEmail,
             'Customer',
-            (string)$emailSubject,
-            (string)$emailBody,
-            (string)$replyMessageId,
-            (string)$originalMessageId,
-            (string)$inReplyTo,      // Add this parameter
-
+            $emailSubject,
+            $emailBody,
+            $replyMessageId,
+            $originalMessageId,
+            $inReplyTo
         );
     }
-}
 
+    header("Location: ticketComments.php?ticket_ref=" . urlencode($ticketRef));
+    exit;
+}
 
 
 
@@ -313,4 +314,14 @@ if (!empty($ticketRef)) {
     $ticket = $TicketModel->getTicketByReference($ticketRef);
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reference'])) {
 
+    $reference = $_POST['reference'];
+
+    require_once 'models/TicketModel.php';
+
+    sendTicketForReassignment($pdo, $reference);
+
+    header("Location: agentTickets.php?success=Ticket returned for reassignment");
+    exit;
+}

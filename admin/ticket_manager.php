@@ -20,8 +20,6 @@ $agentsStmt = $pdo->prepare("SELECT user_id, user_name FROM users WHERE role_id 
 $agentsStmt->execute([$agentRoleId]);
 $agents = $agentsStmt->fetchAll(PDO::FETCH_ASSOC);
 
-
-
 ?>
 
 <!DOCTYPE html>
@@ -58,6 +56,29 @@ $agents = $agentsStmt->fetchAll(PDO::FETCH_ASSOC);
                         All Tickets (<?= count($tickets) ?> total)
                     </h5>
                 </div>
+                   <div class="card mb-4">
+    <div class="card-body">
+
+        <form method="GET" class="mb-3 d-flex gap-2">
+
+            <input type="text" 
+                name="reference"
+                class="form-control"
+                placeholder="Enter Ticket Reference (e.g. T-205136)"
+                value="<?= htmlspecialchars($_GET['reference'] ?? '') ?>">
+
+            <button type="submit" class="btn btn-primary">
+                Find Ticket
+            </button>
+
+            <a href="ticket_manager.php" class="btn btn-secondary">
+                Reset
+            </a>
+
+        </form>
+
+    </div>
+</div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-hover mb-0">
@@ -70,53 +91,70 @@ $agents = $agentsStmt->fetchAll(PDO::FETCH_ASSOC);
                                     <th>Priority</th>
                                     <th>Category</th>
                                     <th>Created At</th>
-                                    <th>Actions</th>
+                                    <th>Actions</th
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php foreach ($tickets as $ticket): ?>
-                                    <tr class="ticket-list-item status-<?= strtolower(str_replace(' ', '-', $ticket['status'])) ?>" style="border-left: 4px solid;">
+                                    <tr class="ticket-list-item status-<?= strtolower(str_replace(' ', '-', $ticket['status'])) ?>"
+                                        style="border-left: 4px solid;">
                                         <td>
                                             <div class="ticket-reference">
-                                                <i class="align-middle me-1" data-feather="hash" style="width: 14px; height: 14px;"></i>
+                                                <i class="align-middle me-1" data-feather="hash"
+                                                    style="width: 14px; height: 14px;"></i>
                                                 <?= htmlspecialchars($ticket['reference']) ?>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="ticket-title">
+                                                <i class="align-middle me-1" data-feather="hash"
+                                                    style="width: 14px; height: 14px;"></i>
+                                                <?= htmlspecialchars($ticket['title']) ?>
                                             </div>
                                         </td>
                                         <td>
                                             <strong><?= htmlspecialchars($ticket['title']) ?></strong>
                                             <br>
-                                            <small class="text-muted">
-                                                <i class="align-middle" data-feather="mail" style="width: 12px; height: 12px;"></i>
+                                            <small class="email">
+                                                <i class="align-middle" data-feather="mail"
+                                                    style="width: 12px; height: 12px;"></i>
                                                 <?= htmlspecialchars($ticket['email']) ?>
                                             </small>
                                         </td>
                                         <td>
-                                            <span class="badge status-badge status-<?= strtolower(str_replace(' ', '-', $ticket['status'])) ?>">
+                                            <span
+                                                class="badge status-badge status-<?= strtolower(str_replace(' ', '-', $ticket['status'])) ?>">
                                                 <?= htmlspecialchars(ucfirst($ticket['status'])) ?>
                                             </span>
                                         </td>
                                         <td>
-                                            <span class="badge priority-badge priority-<?= strtolower($ticket['priority'] ?? 'medium') ?>">
-                                                <i class="align-middle me-1" data-feather="flag" style="width: 12px; height: 12px;"></i>
+                                            <span
+                                                class="badge priority-badge priority-<?= strtolower($ticket['priority'] ?? 'medium') ?>">
+                                                <i class="align-middle me-1" data-feather="flag"
+                                                    style="width: 12px; height: 12px;"></i>
                                                 <?= htmlspecialchars(ucfirst($ticket['priority'] ?? 'Medium')) ?>
                                             </span>
                                         </td>
                                         <td>
                                             <span class="badge bg-secondary">
-                                                <i class="align-middle me-1" data-feather="folder" style="width: 12px; height: 12px;"></i>
+                                                <i class="align-middle me-1" data-feather="folder"
+                                                    style="width: 12px; height: 12px;"></i>
                                                 <?= htmlspecialchars($ticket['category_name']) ?>
                                             </span>
                                         </td>
                                         <td>
                                             <small>
-                                                <i class="align-middle me-1" data-feather="calendar" style="width: 12px; height: 12px;"></i>
+                                                <i class="align-middle me-1" data-feather="calendar"
+                                                    style="width: 12px; height: 12px;"></i>
                                                 <?= date('M d, Y', strtotime($ticket['created_at'])) ?>
                                             </small>
                                         </td>
                                         <td>
                                             <form method="POST" action="" class="d-flex gap-2 align-items-center">
-                                                <input type="hidden" name="ticket_ref" value="<?= htmlspecialchars($ticket['reference']) ?>">
-                                                <select name="user_id" class="form-select form-select-sm" style="min-width: 150px;" required>
+                                                <input type="hidden" name="ticket_ref"
+                                                    value="<?= htmlspecialchars($ticket['reference']) ?>">
+                                                <select name="user_id" class="form-select form-select-sm"
+                                                    style="min-width: 150px;" required>
                                                     <option value="">Select Agent</option>
                                                     <?php foreach ($agents as $agent): ?>
                                                         <option value="<?= $agent['user_id'] ?>" <?= isset($ticket['user_id']) && $ticket['user_id'] == $agent['user_id'] ? 'selected' : '' ?>>
@@ -124,7 +162,8 @@ $agents = $agentsStmt->fetchAll(PDO::FETCH_ASSOC);
                                                         </option>
                                                     <?php endforeach; ?>
                                                 </select>
-                                                <select name="priority" class="form-select form-select-sm" style="min-width: 120px;" required>
+                                                <select name="priority" class="form-select form-select-sm"
+                                                    style="min-width: 120px;" required>
                                                     <option value="">Priority</option>
                                                     <?php
                                                     $priorities = ['low', 'medium', 'high', 'urgent'];
@@ -148,8 +187,9 @@ $agents = $agentsStmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
         <?php endif; ?>
     </div>
-    
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/app.js"></script>
 </body>
-</html>     
+
+</html>
