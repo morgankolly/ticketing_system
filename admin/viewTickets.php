@@ -103,6 +103,7 @@ if (!empty($viewRef)) {
                         </div>
                     </div>
                 </div>
+                
                 <div class="row mt-4">
                     <div class="col-12">
                         <a href="ticketComments.php?ticket_ref=<?= urlencode($ticket['reference'] ?? '') ?>"

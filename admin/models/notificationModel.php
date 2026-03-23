@@ -174,4 +174,17 @@ public function markAllAsReadByAgent(int $agentId): void {
     ");
     $stmt->execute(['id' => $agentId]);
 }
+public function getNotificationsByReference(string $reference): array
+{
+    $stmt = $this->pdo->prepare("
+        SELECT * 
+        FROM notifications 
+        WHERE reference = ?
+        ORDER BY created_at DESC
+    ");
+    
+    $stmt->execute([$reference]);
+
+    return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+}
 }

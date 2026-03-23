@@ -99,7 +99,6 @@ $agent = $userModel->getUserById($agentId);
 											</a>
 										</div>
 										<div class="card">
-											<a href="agentTickets.php?status=closed&agent=<?= $agentId ?>" style="text-decoration:none;color:inherit;">
 											<div class="card-body">
 												<div class="row">
 													<div class="col mt-0">
@@ -131,7 +130,6 @@ $agent = $userModel->getUserById($agentId);
 										['status' => 'Open', 'total' => $openTickets],
 										['status' => 'In Progress', 'total' => $inProgressTickets],
 										['status' => 'Resolved', 'total' => $resolvedTickets],
-										['status' => 'Closed', 'total' => $closedTickets]
 									];
 									$statusData = array_filter($statusData, fn($s) => $s['total'] > 0);
 									?>

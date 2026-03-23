@@ -2,7 +2,10 @@
     session_start();
     error_reporting(E_ALL);
     ini_set('display_errors', 1);
-
+if (!isset($_SESSION['user_id'])) {
+    header("Location: index.php"); // your login page
+    exit;
+}
     require_once __DIR__ . '/config/connection.php';
     require_once __DIR__ . '/models/TicketModel.php';
     require_once __DIR__ . '/compents/agentHeader.php';
@@ -25,12 +28,13 @@ if ($reference) {
 
     // search by reference
     $stmt = $pdo->prepare("
-        SELECT *
-        FROM tickets
-        WHERE user_id = :agent
-        AND reference LIKE :reference
-        ORDER BY created_at DESC
-    ");
+    SELECT *
+    FROM tickets
+    WHERE user_id = :agent
+    AND reference LIKE :reference
+    AND status != 'closed'
+    ORDER BY created_at DESC
+");
 
     $stmt->execute([
         ':agent' => $agentId,
@@ -57,11 +61,12 @@ if ($reference) {
 
     // show all assigned tickets
     $stmt = $pdo->prepare("
-        SELECT *
-        FROM tickets
-        WHERE user_id = :agent
-        ORDER BY created_at DESC
-    ");
+    SELECT *
+    FROM tickets
+    WHERE user_id = :agent
+    AND status != 'closed'
+    ORDER BY created_at DESC
+");
 
     $stmt->execute([
         ':agent' => $agentId

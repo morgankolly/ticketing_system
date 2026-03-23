@@ -122,17 +122,7 @@ class TicketModel
         return $commentTree;
     }
 
-    public function getTicketById(int $ticketId): ?array
-    {
-        $stmt = $this->pdo->prepare("
-            SELECT tickets.*, users.user_name AS assigned_by_user_name
-            FROM tickets
-            LEFT JOIN users ON tickets.user_id = users.user_id
-            WHERE tickets.ticket_id = ?
-        ");
-        $stmt->execute([$ticketId]);
-        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
-    }
+   
 
 
 
@@ -151,14 +141,7 @@ class TicketModel
 
         return 'TICKET-' . $ref . '-' . $timestamp;
     }
-    public function addComment(int $ticketId, int $agentId, string $comment): void
-    {
-        $stmt = $this->pdo->prepare("
-            INSERT INTO ticket_comments (ticket_id, agent_id, comment)
-            VALUES (?, ?, ?)
-        ");
-        $stmt->execute([$ticketId, $agentId, $comment]);
-    }
+   
 
 
     public function createFullTicket($data, $file = null)
@@ -770,6 +753,17 @@ public function findTicket(string $reference): ?array
     $ticket = $stmt->fetch(PDO::FETCH_ASSOC);
 
     return $ticket ?: null;
+}
+
+public function getUnreadCommentsCount($ticketId) {
+    $stmt = $this->pdo->prepare("
+        SELECT COUNT(*) 
+        FROM ticket_comments
+        WHERE ticket_id = :ticket_id
+        AND is_read = 0
+    ");
+    $stmt->execute(['ticket_id' => $ticketId]);
+    return $stmt->fetchColumn();
 }
 }
 

@@ -4,6 +4,7 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 
+
 include_once __DIR__ . '/compents/header.php';
 
 include_once __DIR__ . '/config/connection.php';
@@ -13,13 +14,29 @@ require_once __DIR__ . '/controllers/TicketController.php';
 require_once __DIR__ . '/models/TicketModel.php';
 
 $ticketModel = new TicketModel($pdo);
-
-
 $agentRoleId = 2;
 $agentsStmt = $pdo->prepare("SELECT user_id, user_name FROM users WHERE role_id = ?");
 $agentsStmt->execute([$agentRoleId]);
 $agents = $agentsStmt->fetchAll(PDO::FETCH_ASSOC);
+$ticket = $ticketModel->getTicketByReference($ticketRef);
+$reference = trim($_GET['reference'] ?? '');
+if (!empty($reference)) {
 
+    $stmt = $pdo->prepare("
+        SELECT *
+        FROM tickets
+        WHERE reference LIKE :reference
+        ORDER BY created_at DESC
+    ");
+
+    $stmt->execute([
+        
+        ':reference' => "%$reference%", // partial match
+    ]);
+
+    $tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+}
 ?>
 
 <!DOCTYPE html>
@@ -35,7 +52,25 @@ $agents = $agentsStmt->fetchAll(PDO::FETCH_ASSOC);
 </head>
 
 <body>
+    
     <div class="container-fluid p-4">
+         <div class="card-body">
+
+        <form method="GET" class="mb-3 d-flex gap-2">
+
+             <input type="text" name="reference" class="form-control" 
+               placeholder="Search by ticket reference" 
+               value="<?= htmlspecialchars($_GET['reference'] ?? '') ?>">
+        <button type="submit" class="btn btn-primary">Search</button>
+
+            <a href="ticket_manager.php" class="btn btn-secondary">
+                Reset
+            </a>
+
+        </form>
+
+    </div>
+</div>
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1 class="h3 mb-0" style="color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                 <strong>Ticket</strong> Manager
@@ -57,27 +92,7 @@ $agents = $agentsStmt->fetchAll(PDO::FETCH_ASSOC);
                     </h5>
                 </div>
                    <div class="card mb-4">
-    <div class="card-body">
-
-        <form method="GET" class="mb-3 d-flex gap-2">
-
-            <input type="text" 
-                name="reference"
-                class="form-control"
-                placeholder="Enter Ticket Reference (e.g. T-205136)"
-                value="<?= htmlspecialchars($_GET['reference'] ?? '') ?>">
-
-            <button type="submit" class="btn btn-primary">
-                Find Ticket
-            </button>
-
-            <a href="ticket_manager.php" class="btn btn-secondary">
-                Reset
-            </a>
-
-        </form>
-
-    </div>
+    
 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
