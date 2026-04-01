@@ -4,6 +4,7 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 
 require_once __DIR__ . '/../controllers/UserController.php';
+require_once __DIR__ . '/../models/TicketModel.php';
 ?>
 
 
@@ -56,21 +57,7 @@ require_once __DIR__ . '/../controllers/UserController.php';
                     </a>
                 </li>
 
-                <li class="sidebar-item">
-                    <a class="sidebar-link" href="agentNotifications.php">
-                        <i class="align-middle" data-feather="user"></i> <span class="align-middle">Notications</span>
-                    </a>
-                </li>
-
-                <li class="sidebar-item">
-                    <a class="sidebar-link" href="pages-sign-in.html">
-                        <i class="align-middle" data-feather="log-in"></i> <span class="align-middle">Sign In</span>
-                    </a>
-                </li>
-
-
-
-
+                
             </ul>
 
 

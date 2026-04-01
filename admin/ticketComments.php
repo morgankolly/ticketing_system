@@ -8,6 +8,7 @@ require_once __DIR__ . '/config/connection.php';
 require_once __DIR__ . '/models/TicketModel.php';
 require_once __DIR__ . '/compents/agentHeader.php';
 require_once __DIR__ . '/controllers/TicketController.php';
+require_once __DIR__ . '/auto_close_tickets.php';
 
 $ticketModel = new TicketModel($pdo);
 

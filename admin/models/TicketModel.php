@@ -122,17 +122,7 @@ class TicketModel
         return $commentTree;
     }
 
-    public function getTicketById(int $ticketId): ?array
-    {
-        $stmt = $this->pdo->prepare("
-            SELECT tickets.*, users.user_name AS assigned_by_user_name
-            FROM tickets
-            LEFT JOIN users ON tickets.user_id = users.user_id
-            WHERE tickets.ticket_id = ?
-        ");
-        $stmt->execute([$ticketId]);
-        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
-    }
+   
 
 
 
@@ -151,14 +141,7 @@ class TicketModel
 
         return 'TICKET-' . $ref . '-' . $timestamp;
     }
-    public function addComment(int $ticketId, int $agentId, string $comment): void
-    {
-        $stmt = $this->pdo->prepare("
-            INSERT INTO ticket_comments (ticket_id, agent_id, comment)
-            VALUES (?, ?, ?)
-        ");
-        $stmt->execute([$ticketId, $agentId, $comment]);
-    }
+   
 
 
     public function createFullTicket($data, $file = null)
@@ -314,45 +297,7 @@ public function sendCustomerEmail($data, $ticketRef) {
         ]);
     }
 
-    public function getTopLevelComments(int $ticketId): array
-    {
-        $stmt = $this->pdo->prepare("
-        SELECT ticket_comments.*, 
-               COALESCE(users.user_name, ticket_comments.commenter_email, 'Agent') AS commenter_name
-        FROM ticket_comments
-        LEFT JOIN users ON ticket_comments.agent_id = users.user_id
-        WHERE ticket_comments.ticket_id = :ticketId 
-        AND ticket_comments.parent_comment_id IS NULL
-        ORDER BY ticket_comments.created_at ASC
-    ");
-        $stmt->execute(['ticketId' => $ticketId]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    // Get replies for a comment
-    public function getReplies(int $parentCommentId): array
-    {
-        $stmt = $this->pdo->prepare("
-        SELECT ticket_comments.*, 
-               COALESCE(users.user_name, ticket_comments.commenter_email, 'Agent') AS commenter_name
-        FROM ticket_comments
-        LEFT JOIN users ON ticket_comments.agent_id = users.user_id
-        WHERE ticket_comments.parent_comment_id = :parentId
-        ORDER BY ticket_comments.created_at ASC
-    ");
-        $stmt->execute(['parentId' => $parentCommentId]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    public function getAdminEmails(): array
-    {
-        $stmt = $this->pdo->prepare("SELECT email FROM users WHERE role_id = ?");
-        $stmt->execute([1]); // assuming role_id = 1 is admin
-        $emails = $stmt->fetchAll(PDO::FETCH_COLUMN);
-
-        return $emails ?: [];
-    }
-
+  
 
 
 
@@ -609,24 +554,48 @@ public function sendCustomerEmail($data, $ticketRef) {
     }
 
 
-    public function autoCloseTicketsBySystem()
-    {
-        $stmt = $this->pdo->prepare("
-        UPDATE tickets
-        SET status = 'closed', closed_at = NOW(), closed_by = 'system'
-        WHERE status != 'closed' AND TIMESTAMPDIFF(HOUR, created_at, NOW()) >= 24
-    ");
-        $stmt->execute();
+public function autoCloseTicketsBySystem()
+{
+    // 1. Close tickets where the LATEST comment is from an agent (agent_id is NOT NULL)
+    // and that comment was created more than 1 minute ago.
+    $updateSql = "
+        UPDATE tickets t
+        SET t.status = 'closed', 
+            t.closed_at = NOW(), 
+            t.closed_by = 'system'
+        WHERE t.status != 'closed'
+          AND t.reference IS NOT NULL
+          AND EXISTS (
+              SELECT 1 FROM ticket_comments tc
+              WHERE tc.reference = t.reference
+                /* Check that an agent sent this comment */
+                AND tc.agent_id IS NOT NULL 
+                /* Ensure this is the absolute latest comment for this reference */
+                AND tc.created_at = (
+                    SELECT MAX(created_at) 
+                    FROM ticket_comments 
+                    WHERE reference = t.reference
+                )
+                /* Must be older than 1 minute */
+                AND tc.created_at <= DATE_SUB(NOW(), INTERVAL 1 MINUTE)
+          )";
+          
+    $updateStmt = $this->pdo->prepare($updateSql);
+    $updateStmt->execute();
 
-        // Log auto-closure
-        $logStmt = $this->pdo->prepare("
-        INSERT INTO ticket_history (ticket_reference, action, performed_by, created_at)
-        SELECT reference, 'auto_closed', 'system', NOW()
+    // 2. Log history only for tickets that don't have an auto-close log yet
+    $logSql = "
+        INSERT INTO ticket_history (ticket_id, reference, action, created_at)
+        SELECT ticket_id, reference, 'auto_closed', NOW()
         FROM tickets
-        WHERE status='closed' AND closed_by='system'
-    ");
-        $logStmt->execute();
-    }
+        WHERE status = 'closed'
+          AND reference NOT IN (
+              SELECT reference FROM ticket_history WHERE action = 'auto_closed'
+          )";
+          
+    $logStmt = $this->pdo->prepare($logSql);
+    $logStmt->execute();
+}
 
     public function saveCloseToken($ticketRef, $token)
     {
@@ -766,6 +735,19 @@ public function findTicket(string $reference): ?array
 
     return $ticket ?: null;
 }
+
+public function getUnreadCommentsCount($ticketId) {
+    $stmt = $this->pdo->prepare("
+        SELECT COUNT(*) 
+        FROM ticket_comments
+        WHERE ticket_id = :ticket_id
+        AND is_read = 0
+    ");
+    $stmt->execute(['ticket_id' => $ticketId]);
+    return $stmt->fetchColumn();
+}
+
+
 }
 
 

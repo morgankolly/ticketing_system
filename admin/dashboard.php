@@ -105,28 +105,30 @@ GROUP BY priority
 					<div class="w-100">
 						<div class="row">
 							<div class="col-sm-6">
-								<div class="card ticket-stat-card stat-open">
-									<div class="card-body">
-										<div class="row">
-											<div class="col mt-0">
-												<h5 class="card-title">
-													<i class="align-middle me-2" data-feather="ticket"
-														style="width: 18px; height: 18px;"></i>
-													Total Tickets
-												</h5>
-											</div>
-											<div class="col-auto">
-												<div class="stat text-primary">
-													<i class="align-middle" data-feather="ticket"></i>
+								<a href="ticket_manager.php" title="Click to view all tickets" style="text-decoration:none; color:inherit;">
+									<div class="card ticket-stat-card stat-open">
+										<div class="card-body">
+											<div class="row">
+												<div class="col mt-0">
+													<h5 class="card-title">
+														<i class="align-middle me-2" data-feather="ticket"
+															style="width: 18px; height: 18px;"></i>
+														Total Tickets
+													</h5>
+												</div>
+												<div class="col-auto">
+													<div class="stat text-primary">
+														<i class="align-middle" data-feather="ticket"></i>
+													</div>
 												</div>
 											</div>
+											<h1 class="mt-1 mb-3 ticket-stat-number">
+												<?= (int) $totalTickets ?>
+											</h1>
+											<div class="ticket-stat-label">All Tickets</div>
 										</div>
-										<h1 class="mt-1 mb-3 ticket-stat-number">
-											<?= (int) $totalTickets ?>
-										</h1>
-										<div class="ticket-stat-label">All Tickets</div>
 									</div>
-								</div>
+								</a>
 								<div class="card ticket-stat-card">
 									<div class="card-body">
 										<div class="row">
@@ -453,6 +455,7 @@ GROUP BY priority
 
 			}
 		}
+
 	</script>
 
 </body>

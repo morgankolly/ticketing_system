@@ -4,3 +4,8 @@ require_once __DIR__ . '/models/TicketModel.php';
 
 $ticketModel = new TicketModel($pdo);
 $ticketModel->autoCloseTicketsBySystem();
+
+
+
+
+echo "Auto-close executed.";
