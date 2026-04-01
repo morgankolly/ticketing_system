@@ -171,8 +171,13 @@ $startDate = $_GET['start_date'] ?? '';
 $endDate = $_GET['end_date'] ?? '';
 $ticketPriorities = ['low', 'medium', 'high'];
 
-$query = "SELECT tickets.*, category.category_name 
-          FROM tickets 
+$page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+$perPage = 50;
+$offset = ($page - 1) * $perPage;
+
+$query = "SELECT tickets.ticket_id, tickets.reference, tickets.title, tickets.email,
+                 tickets.status, tickets.priority, tickets.created_at, category.category_name
+          FROM tickets
           JOIN category ON tickets.category_id = category.category_id
           WHERE tickets.user_id IS NULL";
 
@@ -191,10 +196,15 @@ if (!empty($endDate)) {
     $params[':end_date'] = $endDate . " 23:59:59";
 }
 
-$query .= " ORDER BY tickets.created_at DESC";
+$query .= " ORDER BY tickets.created_at DESC LIMIT :limit OFFSET :offset";
 
 $stmt = $pdo->prepare($query);
-$stmt->execute($params);
+foreach ($params as $key => $value) {
+    $stmt->bindValue($key, $value);
+}
+$stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
+$stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+$stmt->execute();
 $tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 

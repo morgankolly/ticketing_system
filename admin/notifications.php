@@ -8,19 +8,21 @@ include_once __DIR__ . '/config/connection.php';
 
 // Notifications
 $stmt = $pdo->query("
-    SELECT * 
-    FROM notifications 
+    SELECT *
+    FROM notifications
     ORDER BY created_at DESC
+    LIMIT 100
 ");
 
 $notifications = $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
 
 // Tickets
 $ticket_stmt = $pdo->query("
-    SELECT * 
-    FROM tickets 
-    WHERE is_read = 0 
+    SELECT *
+    FROM tickets
+    WHERE is_read = 0
     ORDER BY created_at DESC
+    LIMIT 50
 ");
 
 $new_tickets = $ticket_stmt ? $ticket_stmt->fetchAll(PDO::FETCH_ASSOC) : [];

@@ -224,24 +224,19 @@ class TicketModel
 
     public function notifyAdmins($ticketId, $customerEmail)
     {
-        $stmt = $this->pdo->prepare("SELECT email FROM users WHERE role_id = 1");
-        $stmt->execute();
-        $admins = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $message = "New ticket (#{$ticketId}) submitted by {$customerEmail}.";
 
-        foreach ($admins as $admin) {
-
-            $notif = $this->pdo->prepare("
-            INSERT INTO notifications 
-            (email, ticket_id, message, is_read, created_at)
-            VALUES (:email, :ticket_id, :message, 0, NOW())
+        $stmt = $this->pdo->prepare("
+            INSERT INTO notifications (email, ticket_id, message, is_read, created_at)
+            SELECT email, :ticket_id, :message, 0, NOW()
+            FROM users
+            WHERE role_id = 1
         ");
 
-            $notif->execute([
-                ':email' => $admin['email'],
-                ':ticket_id' => $ticketId,
-                ':message' => "New ticket (#{$ticketId}) submitted by {$customerEmail}."
-            ]);
-        }
+        $stmt->execute([
+            ':ticket_id' => $ticketId,
+            ':message' => $message
+        ]);
     }
 public function sendCustomerEmail($data, $ticketRef) {
     
