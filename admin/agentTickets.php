@@ -32,7 +32,6 @@ if ($reference) {
     FROM tickets
     WHERE user_id = :agent
     AND reference LIKE :reference
-    AND status != 'closed'
     ORDER BY created_at DESC
 ");
 
@@ -64,7 +63,6 @@ if ($reference) {
     SELECT *
     FROM tickets
     WHERE user_id = :agent
-    AND status != 'closed'
     ORDER BY created_at DESC
 ");
 

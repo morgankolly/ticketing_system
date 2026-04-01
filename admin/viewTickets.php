@@ -15,8 +15,12 @@ if (!empty($viewRef)) {
     $ticketModel->markAsInProgress($viewRef);
 
 }
+$ticket = null;
 
-
+if (!empty($viewRef)) {
+    $ticket = $ticketModel->getTicketByReference($viewRef); // <-- YOU NEED THIS
+    $ticketModel->markAsInProgress($viewRef);
+}
 
 ?>
 

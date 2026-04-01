@@ -17,7 +17,7 @@ $agentId = $_SESSION['user_id'] ?? null;
 // Get agent's assigned tickets
 $assignedTickets = $ticketModel->getAssignedTickets($agentId);
 
-// Calculate stats
+
 $totalAssigned = count($assignedTickets);
 $openTickets = count(array_filter($assignedTickets, fn($t) => strtolower($t['status']) === 'open'));
 $inProgressTickets = count(array_filter($assignedTickets, fn($t) => strtolower($t['status']) === 'in_progress' || strtolower($t['status']) === 'in progress'));
@@ -99,6 +99,7 @@ $agent = $userModel->getUserById($agentId);
 											</a>
 										</div>
 										<div class="card">
+											<a href="agentTickets.php?status=closed&agent=<?= $agentId ?>" style="text-decoration:none;color:inherit;">
 											<div class="card-body">
 												<div class="row">
 													<div class="col mt-0">
@@ -127,10 +128,11 @@ $agent = $userModel->getUserById($agentId);
 								<div class="card-body py-3">
 									<?php 
 									$statusData = [
-										['status' => 'Open', 'total' => $openTickets],
-										['status' => 'In Progress', 'total' => $inProgressTickets],
-										['status' => 'Resolved', 'total' => $resolvedTickets],
-									];
+    ['status' => 'Open', 'total' => $openTickets],
+    ['status' => 'In Progress', 'total' => $inProgressTickets],
+    ['status' => 'Resolved', 'total' => $resolvedTickets],
+    ['status' => 'Closed', 'total' => $closedTickets],
+];
 									$statusData = array_filter($statusData, fn($s) => $s['total'] > 0);
 									?>
 									<?php if (!empty($statusData)): ?>

@@ -57,12 +57,7 @@ require_once __DIR__ . '/../models/TicketModel.php';
                     </a>
                 </li>
 
-                <li class="sidebar-item ">
-                    <a class="sidebar-link" href="viewTickets.php?ticket_ref=<?= urlencode($ticket['reference']) ?>"
-                         <i class="align-middle" data-feather="sliders"></i> <span class="align-middle">
-                        View & Comment </span>
-                    </a>
-                </li>
+                
             </ul>
 
 
