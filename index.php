@@ -46,6 +46,9 @@ $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <link href="assets/css/app.css" rel="stylesheet">
     <link href="assets/css/custom.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css">
+    <link href="assets/css/custom.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 </head>
 
 <body>
@@ -81,10 +84,10 @@ $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         </option>
                         
                     <?php endforeach; ?>
-                      <button type="submit"  name="insertCategory" class="btn btn-primary"> 
-                Add category
-            </button>
+                
                 </select>
+
+                
                  
             </div>
 

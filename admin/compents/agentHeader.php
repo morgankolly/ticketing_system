@@ -57,6 +57,12 @@ require_once __DIR__ . '/../models/TicketModel.php';
                     </a>
                 </li>
 
+                <li class="sidebar-item ">
+                    <a class="sidebar-link" href="agentNotifications.php">
+                        <i class="align-middle" data-feather="sliders"></i> <span class="align-middle">Notifications</span>
+                    </a>
+                </li>
+
                 
             </ul>
 

@@ -1,0 +1,10 @@
+2026-04-13 11:29:55 CMD: /Applications/XAMPP/xamppfiles/bin/php '/Applications/XAMPP/xamppfiles/htdocs/ticketing/ticketing_system/admin/controllers/../send_mail_worker.php' 'donahdrizon1@gmail.com' 'donah' 'New Ticket Assigned (#T-272624)' '
+                <h3>New Ticket Assigned</h3>
+                <p>Hello <strong>donah</strong>,</p>
+                <p>A ticket has been assigned to you.</p>
+                <p><strong>Reference:</strong> T-272624</p>
+                <p><strong>Priority:</strong> Medium</p>
+                <br>
+                <p>Please log in to view the ticket.</p>
+                <p>Regards,<br>Morgan Kolly Ticketing System</p>
+            '

@@ -6,45 +6,49 @@ class NotificationModel {
         $this->pdo = $pdo;
     }
 
-    public function createNotification(int $ticketId, string $ticketRef, string $message): bool {
-        $stmt = $this->pdo->prepare("
-            INSERT INTO notifications (ticket_id, reference, message)
-            VALUES (:ticket_id, :reference, :message)
-        ");
-        return $stmt->execute([
-            ':ticket_id' => $ticketId,
-            ':reference' => $ticketRef,
-            ':message'   => $message
-        ]);
-    }
+ public function createNotification(
+    int $agentId,
+    int $ticketId,
+    string $ticketRef,
+    string $message
+): bool {
 
-    public function notifyAssignedAgent(string $ticketRef, string $senderEmail): void
-    {
-        // Get ticket and assigned agent's email
-        $stmt = $this->pdo->prepare("
-            SELECT t.ticket_id, u.email AS agent_email
-            FROM tickets t
-            INNER JOIN users u ON u.user_id = t.user_id
-            WHERE t.reference = :reference
-            LIMIT 1
-        ");
-        $stmt->execute([':reference' => $ticketRef]);
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    $stmt = $this->pdo->prepare("
+        INSERT INTO notifications (agent_id, ticket_id, reference, message, is_read, created_at)
+        VALUES (:agent_id, :ticket_id, :reference, :message, 0, NOW())
+    ");
 
-        if (!$row) return; // ticket not found or not assigned
+    return $stmt->execute([
+        ':agent_id' => $agentId,
+        ':ticket_id' => $ticketId,
+        ':reference' => $ticketRef,
+        ':message'   => $message
+    ]);
+}
 
-        $message = "User ({$senderEmail}) replied to ticket {$ticketRef}.";
+   public function notifyAssignedAgent(string $ticketRef, string $senderEmail): void
+{
+    $stmt = $this->pdo->prepare("
+        SELECT ticket_id, user_id 
+        FROM tickets 
+        WHERE reference = :reference 
+        LIMIT 1
+    ");
+    $stmt->execute([':reference' => $ticketRef]);
 
-        $notifStmt = $this->pdo->prepare("
-            INSERT INTO notifications (email, ticket_id, message, is_read, created_at)
-            VALUES (:email, :ticket_id, :message, 0, NOW())
-        ");
-        $notifStmt->execute([
-            ':email'     => $row['agent_email'],
-            ':ticket_id' => $row['ticket_id'],
-            ':message'   => $message,
-        ]);
-    }
+    $ticket = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$ticket || empty($ticket['user_id'])) return;
+
+    $message = "User ({$senderEmail}) replied to ticket {$ticketRef}.";
+
+    $this->createNotification(
+        (int)$ticket['user_id'],
+        (int)$ticket['ticket_id'],
+        $ticketRef,
+        $message
+    );
+}
     
     public function getAgent(string $email) {
         $stmt = $this->pdo->prepare("SELECT * FROM users WHERE email = :email LIMIT 1");

@@ -1,0 +1,95 @@
+2026-04-13 11:31:46 CMD: /Applications/XAMPP/xamppfiles/bin/php '/Applications/XAMPP/xamppfiles/htdocs/ticketing/ticketing_system/admin/controllers/../send_mail_worker.php' 'donahdrizon1@gmail.com' 'donah' 'New Ticket Assigned (#T-272624)' '
+                <h3>New Ticket Assigned</h3>
+                <p>Hello <strong>donah</strong>,</p>
+                <p>A ticket has been assigned to you.</p>
+                <p><strong>Reference:</strong> T-272624</p>
+                <p><strong>Priority:</strong> Medium</p>
+                <br>
+                <p>Please log in to view the ticket.</p>
+                <p>Regards,<br>Morgan Kolly Ticketing System</p>
+            '
+2026-04-13 11:31:46 RESULT: 255
+OUTPUT: 
+
+2026-04-13 11:32:46 CMD: /Applications/XAMPP/xamppfiles/bin/php '/Applications/XAMPP/xamppfiles/htdocs/ticketing/ticketing_system/admin/controllers/../send_mail_worker.php' 'patricianamugambe@gmail.com' 'patricia' 'New Ticket Assigned (#T-272624)' '
+                <h3>New Ticket Assigned</h3>
+                <p>Hello <strong>patricia</strong>,</p>
+                <p>A ticket has been assigned to you.</p>
+                <p><strong>Reference:</strong> T-272624</p>
+                <p><strong>Priority:</strong> Medium</p>
+                <br>
+                <p>Please log in to view the ticket.</p>
+                <p>Regards,<br>Morgan Kolly Ticketing System</p>
+            '
+2026-04-13 11:32:46 RESULT: 255
+OUTPUT: 
+
+2026-04-13 11:33:18 CMD: /Applications/XAMPP/xamppfiles/bin/php '/Applications/XAMPP/xamppfiles/htdocs/ticketing/ticketing_system/admin/controllers/../send_mail_worker.php' 'kayiwaallan@gmail.com' 'kayiwa allan' 'New Ticket Assigned (#T-272624)' '
+                <h3>New Ticket Assigned</h3>
+                <p>Hello <strong>kayiwa allan</strong>,</p>
+                <p>A ticket has been assigned to you.</p>
+                <p><strong>Reference:</strong> T-272624</p>
+                <p><strong>Priority:</strong> Medium</p>
+                <br>
+                <p>Please log in to view the ticket.</p>
+                <p>Regards,<br>Morgan Kolly Ticketing System</p>
+            '
+2026-04-13 11:33:18 RESULT: 255
+OUTPUT: 
+
+2026-04-13 11:34:45 CMD: /Applications/XAMPP/xamppfiles/bin/php '/Applications/XAMPP/xamppfiles/htdocs/ticketing/ticketing_system/admin/controllers/../send_mail_worker.php' 'donahdrizon1@gmail.com' 'donah' 'New Ticket Assigned (#T-272624)' '
+                <h3>New Ticket Assigned</h3>
+                <p>Hello <strong>donah</strong>,</p>
+                <p>A ticket has been assigned to you.</p>
+                <p><strong>Reference:</strong> T-272624</p>
+                <p><strong>Priority:</strong> Medium</p>
+                <br>
+                <p>Please log in to view the ticket.</p>
+                <p>Regards,<br>Morgan Kolly Ticketing System</p>
+            '
+2026-04-13 11:34:45 RESULT: 255
+OUTPUT: 
+
+2026-04-13 11:36:53 CMD: /Applications/XAMPP/xamppfiles/bin/php '/Applications/XAMPP/xamppfiles/htdocs/ticketing/ticketing_system/admin/controllers/../send_mail_worker.php' 'donahdrizon1@gmail.com' 'donah' 'New Ticket Assigned (#T-217324)' '
+                <h3>New Ticket Assigned</h3>
+                <p>Hello <strong>donah</strong>,</p>
+                <p>A ticket has been assigned to you.</p>
+                <p><strong>Reference:</strong> T-217324</p>
+                <p><strong>Priority:</strong> Medium</p>
+                <br>
+                <p>Please log in to view the ticket.</p>
+                <p>Regards,<br>Morgan Kolly Ticketing System</p>
+            '
+2026-04-13 11:36:53 RESULT: 255
+OUTPUT: 
+
+2026-04-13 12:05:54 CMD: /Applications/XAMPP/xamppfiles/bin/php '/Applications/XAMPP/xamppfiles/htdocs/ticketing/ticketing_system/admin/controllers/../send_mail_worker.php' 'donahdrizon1@gmail.com' 'donah' 'New Ticket Assigned (#T-938645)' '
+                <h3>New Ticket Assigned</h3>
+                <p>Hello <strong>donah</strong>,</p>
+                <p>A ticket has been assigned to you.</p>
+                <p><strong>Reference:</strong> T-938645</p>
+                <p><strong>Priority:</strong> Medium</p>
+                <br>
+                <p>Please log in to view the ticket.</p>
+                <p>Regards,<br>Morgan Kolly Ticketing System</p>
+            '
+2026-04-13 12:05:54 RESULT: 255
+OUTPUT: 
+
+2026-04-13 12:27:50 CMD: /Applications/XAMPP/xamppfiles/bin/php '/Applications/XAMPP/xamppfiles/htdocs/ticketing/ticketing_system/admin/controllers/../send_mail_worker.php' 'donahdrizon1@gmail.com' 'donah' 'New Ticket Assigned (#T-732933)' '
+                <h3>New Ticket Assigned</h3>
+                <p>Hello <strong>donah</strong>,</p>
+                <p>A ticket has been assigned to you.</p>
+                <p><strong>Reference:</strong> T-732933</p>
+                <p><strong>Priority:</strong> Medium</p>
+                <br>
+                <p>Please log in to view the ticket.</p>
+                <p>Regards,<br>Morgan Kolly Ticketing System</p>
+            '
+2026-04-13 12:27:50 RESULT: 255
+OUTPUT: 
+
+2026-04-13 12:32:10 CMD: /Applications/XAMPP/xamppfiles/bin/php '/Applications/XAMPP/xamppfiles/htdocs/ticketing/ticketing_system/admin/send_mail_worker.php' 'donahdrizon1@gmail.com' 'donah' 'TmV3IFRpY2tldCBBc3NpZ25lZCAoI1QtNTQ5ODA2KQ==' 'CiAgICAgICAgICAgICAgICA8aDM+TmV3IFRpY2tldCBBc3NpZ25lZDwvaDM+CiAgICAgICAgICAgICAgICA8cD5IZWxsbyA8c3Ryb25nPmRvbmFoPC9zdHJvbmc+LDwvcD4KICAgICAgICAgICAgICAgIDxwPkEgdGlja2V0IGhhcyBiZWVuIGFzc2lnbmVkIHRvIHlvdS48L3A+CiAgICAgICAgICAgICAgICA8cD48c3Ryb25nPlJlZmVyZW5jZTo8L3N0cm9uZz4gVC01NDk4MDY8L3A+CiAgICAgICAgICAgICAgICA8cD48c3Ryb25nPlByaW9yaXR5Ojwvc3Ryb25nPiBNZWRpdW08L3A+CiAgICAgICAgICAgICAgICA8YnI+CiAgICAgICAgICAgICAgICA8cD5QbGVhc2UgbG9nIGluIHRvIHZpZXcgdGhlIHRpY2tldC48L3A+CiAgICAgICAgICAgICAgICA8cD5SZWdhcmRzLDxicj5Nb3JnYW4gS29sbHkgVGlja2V0aW5nIFN5c3RlbTwvcD4KICAgICAgICAgICAg'
+2026-04-13 12:34:30 CMD: /Applications/XAMPP/xamppfiles/bin/php '/Applications/XAMPP/xamppfiles/htdocs/ticketing/ticketing_system/admin/send_mail_worker.php' 'donahdrizon1@gmail.com' 'donah' 'TmV3IFRpY2tldCBBc3NpZ25lZCAoI1QtNTQ5ODA2KQ==' 'CiAgICAgICAgICAgICAgICA8aDM+TmV3IFRpY2tldCBBc3NpZ25lZDwvaDM+CiAgICAgICAgICAgICAgICA8cD5IZWxsbyA8c3Ryb25nPmRvbmFoPC9zdHJvbmc+LDwvcD4KICAgICAgICAgICAgICAgIDxwPkEgdGlja2V0IGhhcyBiZWVuIGFzc2lnbmVkIHRvIHlvdS48L3A+CiAgICAgICAgICAgICAgICA8cD48c3Ryb25nPlJlZmVyZW5jZTo8L3N0cm9uZz4gVC01NDk4MDY8L3A+CiAgICAgICAgICAgICAgICA8cD48c3Ryb25nPlByaW9yaXR5Ojwvc3Ryb25nPiBNZWRpdW08L3A+CiAgICAgICAgICAgICAgICA8YnI+CiAgICAgICAgICAgICAgICA8cD5QbGVhc2UgbG9nIGluIHRvIHZpZXcgdGhlIHRpY2tldC48L3A+CiAgICAgICAgICAgICAgICA8cD5SZWdhcmRzLDxicj5Nb3JnYW4gS29sbHkgVGlja2V0aW5nIFN5c3RlbTwvcD4KICAgICAgICAgICAg'
+2026-04-13 12:35:01 CMD: /Applications/XAMPP/xamppfiles/bin/php '/Applications/XAMPP/xamppfiles/htdocs/ticketing/ticketing_system/admin/send_mail_worker.php' 'donahdrizon1@gmail.com' 'donah' 'TmV3IFRpY2tldCBBc3NpZ25lZCAoI1QtODEzOTE1KQ==' 'CiAgICAgICAgICAgICAgICA8aDM+TmV3IFRpY2tldCBBc3NpZ25lZDwvaDM+CiAgICAgICAgICAgICAgICA8cD5IZWxsbyA8c3Ryb25nPmRvbmFoPC9zdHJvbmc+LDwvcD4KICAgICAgICAgICAgICAgIDxwPkEgdGlja2V0IGhhcyBiZWVuIGFzc2lnbmVkIHRvIHlvdS48L3A+CiAgICAgICAgICAgICAgICA8cD48c3Ryb25nPlJlZmVyZW5jZTo8L3N0cm9uZz4gVC04MTM5MTU8L3A+CiAgICAgICAgICAgICAgICA8cD48c3Ryb25nPlByaW9yaXR5Ojwvc3Ryb25nPiBIaWdoPC9wPgogICAgICAgICAgICAgICAgPGJyPgogICAgICAgICAgICAgICAgPHA+UGxlYXNlIGxvZyBpbiB0byB2aWV3IHRoZSB0aWNrZXQuPC9wPgogICAgICAgICAgICAgICAgPHA+UmVnYXJkcyw8YnI+TW9yZ2FuIEtvbGx5IFRpY2tldGluZyBTeXN0ZW08L3A+CiAgICAgICAgICAgIA=='
+2026-04-13 12:35:09 CMD: /Applications/XAMPP/xamppfiles/bin/php '/Applications/XAMPP/xamppfiles/htdocs/ticketing/ticketing_system/admin/send_mail_worker.php' 'donahdrizon1@gmail.com' 'donah' 'TmV3IFRpY2tldCBBc3NpZ25lZCAoI1QtODEzOTE1KQ==' 'CiAgICAgICAgICAgICAgICA8aDM+TmV3IFRpY2tldCBBc3NpZ25lZDwvaDM+CiAgICAgICAgICAgICAgICA8cD5IZWxsbyA8c3Ryb25nPmRvbmFoPC9zdHJvbmc+LDwvcD4KICAgICAgICAgICAgICAgIDxwPkEgdGlja2V0IGhhcyBiZWVuIGFzc2lnbmVkIHRvIHlvdS48L3A+CiAgICAgICAgICAgICAgICA8cD48c3Ryb25nPlJlZmVyZW5jZTo8L3N0cm9uZz4gVC04MTM5MTU8L3A+CiAgICAgICAgICAgICAgICA8cD48c3Ryb25nPlByaW9yaXR5Ojwvc3Ryb25nPiBIaWdoPC9wPgogICAgICAgICAgICAgICAgPGJyPgogICAgICAgICAgICAgICAgPHA+UGxlYXNlIGxvZyBpbiB0byB2aWV3IHRoZSB0aWNrZXQuPC9wPgogICAgICAgICAgICAgICAgPHA+UmVnYXJkcyw8YnI+TW9yZ2FuIEtvbGx5IFRpY2tldGluZyBTeXN0ZW08L3A+CiAgICAgICAgICAgIA=='

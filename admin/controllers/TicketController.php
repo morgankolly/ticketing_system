@@ -1,4 +1,7 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
 
 
 require_once __DIR__ . '/../models/TicketModel.php';
@@ -30,13 +33,20 @@ if (isset($_POST['createTicket'])) {
             'reference' => $ticketRef,
             'message_id' => $messageId // 👈 ADD THIS to store in database
         ];
-        
+
 
         // 
         if (empty($data['title']) || empty($data['description']) || empty($data['email'])) {
             throw new Exception("Please fill in all required fields.");
         }
-        $result = $TicketModel->createFullTicket($data, $_FILES['file'] ?? null);
+
+        $file = null;
+
+        if (isset($_FILES['file']) && $_FILES['file']['error'] !== UPLOAD_ERR_NO_FILE) {
+            $file = $_FILES['file'];
+        }
+
+        $result = $TicketModel->createFullTicket($data, $file);
 
         $ticket_id = $result['ticket_id'];
 
@@ -47,7 +57,7 @@ if (isset($_POST['createTicket'])) {
         if (filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
 
             $data['close_link'] = $closeLink; // pass link to email method
-            
+
             // ✅ Pass the Message-ID to the email sending method
             $data['message_id'] = $messageId;
 
@@ -56,14 +66,14 @@ if (isset($_POST['createTicket'])) {
 
         $TicketModel->notifyAdmins($ticket_id, $data['email']);
 
-        
+
 
     } catch (Exception $e) {
 
         $_SESSION['error'] = $e->getMessage();
         echo "<script>
                 alert('Ticket submitted successfully.');
-                window.location.href='index.php';
+                    window.location.href='index.php';
               </script>";
         exit;
     }
@@ -74,79 +84,91 @@ if (isset($_POST['assign_ticket'])) {
 
     try {
 
-        // 1️⃣ Sanitize inputs
+        // =========================
+        // 1. INPUT VALIDATION
+        // =========================
         $ticketRef = trim($_POST['ticket_ref'] ?? '');
-        $userId = isset($_POST['user_id']) ? (int) $_POST['user_id'] : 0;
+        $userId = (int) ($_POST['user_id'] ?? 0);
         $priority = ucfirst(strtolower($_POST['priority'] ?? 'Medium'));
 
-
-        if (empty($ticketRef) || $userId <= 0) {
+        if ($ticketRef === '' || $userId <= 0) {
             throw new Exception("Ticket reference or agent is missing.");
         }
+
         $allowedPriorities = ['Low', 'Medium', 'High', 'Urgent'];
         if (!in_array($priority, $allowedPriorities)) {
             $priority = 'Medium';
         }
 
-        // 3️⃣ Initialize models
+        // =========================
+        // 2. MODELS
+        // =========================
         $ticketModel = new TicketModel($pdo);
         $userModel = new UserModel($pdo);
         $notifModel = new NotificationModel($pdo);
 
-        // 4️⃣ Assign ticket (ONLY here)
+        // =========================
+        // 3. ASSIGN TICKET
+        // =========================
         if (!$ticketModel->assignTicket($ticketRef, $userId, $priority)) {
             throw new Exception("Failed to assign ticket.");
         }
 
-        // 5️⃣ Fetch agent
+        // =========================
+        // 4. GET AGENT
+        // =========================
         $agent = $userModel->getUserById($userId);
+
         if (!$agent) {
             throw new Exception("Agent not found.");
         }
 
-        // 6️⃣ Send email
-        if (filter_var($agent['email'], FILTER_VALIDATE_EMAIL)) {
+        // =========================
+        // 5. NOTIFICATION (SAFE)
+        // =========================
+        $ticket = $ticketModel->getTicketByReference($ticketRef);
 
-            if (!function_exists('sendemail')) {
-                throw new Exception("Email function not found.");
+        if ($ticket) {
+            try {
+                $notifModel->createNotification(
+                    $agent['user_id'],
+                    $ticket['ticket_id'],
+                    $ticketRef,
+                    "Ticket {$ticketRef} assigned to {$agent['user_name']} with {$priority} priority."
+                );
+            } catch (Exception $e) {
+                error_log("Notification Error: " . $e->getMessage());
             }
+        }
+
+        // =========================
+        // 6. EMAIL WORKER (RELIABLE)
+        // =========================
+        if (!empty($agent['email']) && filter_var($agent['email'], FILTER_VALIDATE_EMAIL)) {
 
             $subject = "New Ticket Assigned (#{$ticketRef})";
+
             $body = "
-                <h3>New Ticket Assigned</h3>
-                <p>Hello <strong>" . htmlspecialchars($agent['user_name']) . "</strong>,</p>
-                <p>A ticket has been assigned to you.</p>
-                <p><strong>Reference:</strong> " . htmlspecialchars($ticketRef) . "</p>
-                <p><strong>Priority:</strong> {$priority}</p>
-                <br>
-                <p>Please log in to view the ticket.</p>
-                <p>Regards,<br>Morgan Kolly Ticketing System</p>
-            ";
+        <h3>New Ticket Assigned</h3>
+        <p>Hello <strong>" . htmlspecialchars($agent['user_name']) . "</strong>,</p>
+        <p>A ticket has been assigned to you.</p>
+        <p><strong>Reference:</strong> " . htmlspecialchars($ticketRef) . "</p>
+        <p><strong>Priority:</strong> {$priority}</p>
+        <br>
+        <p>Please log in to view the ticket.</p>
+        <p>Regards,<br>Morgan Kolly Ticketing System</p>
+    ";
 
-            $headers = [
-                'X-Mailer' => 'PHP/' . phpversion(),
-                'From' => 'morgankolly5@gmail.com'
-            ];
+            // 🚀 DIRECT EMAIL (NO EXEC, NO WORKER)
+            $sent = sendnotification($subject, $agent['email'], $body);
 
-            sendemail($agent['email'], $agent['user_name'], $subject, $body);
+            if (!$sent) {
+                error_log("Failed to send email to " . $agent['email']);
+            }
         }
 
-        // 7️⃣ Create system notification
-        $ticket = $ticketModel->getTicketByReference($ticketRef);
-        if (!$ticket) {
-            throw new Exception("Ticket not found.");
-        }
-
-        $notifMsg = "Ticket {$ticketRef} assigned to {$agent['user_name']} with {$priority} priority.";
-        try {
-            $notifModel->createNotification($ticket['ticket_id'], $ticketRef, $notifMsg);
-        } catch (Exception $e) {
-            error_log("Notification Error: " . $e->getMessage());
-        }
-
-        // 8️⃣ Success
         echo "<script>
-                alert('Ticket assigned successfully and Agent got notified!');
+                alert('Ticket assigned successfully and  " . htmlspecialchars($agent['user_name']) . " got notified!');
                 window.location.href='ticket_manager.php';
               </script>";
         exit;
@@ -165,13 +187,12 @@ if (isset($_POST['assign_ticket'])) {
 
 
 
-
 $priority = $_GET['priority'] ?? '';
 $startDate = $_GET['start_date'] ?? '';
 $endDate = $_GET['end_date'] ?? '';
 $ticketPriorities = ['low', 'medium', 'high'];
 
-$page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+$page = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
 $perPage = 50;
 $offset = ($page - 1) * $perPage;
 
@@ -247,19 +268,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_comment'])) {
     $ticketId = $ticket['ticket_id'];
 
 
-   $stmt = $pdo->prepare("
+    $stmt = $pdo->prepare("
 INSERT INTO ticket_comments 
 (ticket_id, agent_id, comment, parent_comment_id, reference, created_at)
 VALUES (?, ?, ?, ?, ?, NOW())
 ");
 
-$stmt->execute([
-    $ticketId,
-    $agentId,
-    $comment,
-    $parentId,
-    $ticketRef
-]);
+    $stmt->execute([
+        $ticketId,
+        $agentId,
+        $comment,
+        $parentId,
+        $ticketRef
+    ]);
 
     $recipientEmail = $ticket['email'];
 
@@ -277,7 +298,22 @@ $stmt->execute([
         $stmt = $pdo->prepare("UPDATE tickets SET close_token = ? WHERE reference = ?");
         $stmt->execute([$token, $ticketRef]);
 
-        $closeLink = "https://localhost/ticketing/ticketing_system/admin/close_ticket.php?ref=" . urlencode($ticketRef);
+       $closeLink = "https://localhost/ticketing/ticketing_system/admin/close_ticket.php?ref=" . urlencode($ticketRef);
+
+$button = '
+<a href="'.$closeLink.'" 
+   style="
+       display:inline-block;
+       padding:10px 18px;
+       background-color:#dc3545;
+       color:#ffffff;
+       text-decoration:none;
+       border-radius:6px;
+       font-weight:600;
+       font-family:Arial, sans-serif;
+   ">
+   Close Ticket #'.$ticketRef.'
+</a>';
 
         $emailSubject = "Re: Ticket #{$ticketRef}";
 
@@ -324,14 +360,29 @@ if (!empty($ticketRef)) {
     $ticket = $TicketModel->getTicketByReference($ticketRef);
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reference'])) {
+
+if (isset($_POST['return_ticket'])) {
 
     $reference = $_POST['reference'];
+    $reason = trim($_POST['reason']);
+    $agent_id = $_SESSION['user_id']; // logged-in agent
 
-    require_once 'models/TicketModel.php';
+    if (!empty($reference) && !empty($reason)) {
 
-    sendTicketForReassignment($pdo, $reference);
+        $stmt = $pdo->prepare("
+            UPDATE tickets 
+            SET 
+                status = 'unresolved',
+                returned_by = ?,
+                return_reason = ?,
+                returned_at = NOW()
+            WHERE reference = ?
+        ");
 
-    header("Location: agentTickets.php?success=Ticket returned for reassignment");
-    exit;
+        $stmt->execute([$agent_id, $reason, $reference]);
+
+        // Redirect to avoid resubmission
+        header("Location: agentTickets.php?ticket_ref=" . urlencode($reference));
+        exit;
+    }
 }

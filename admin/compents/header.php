@@ -14,6 +14,7 @@ if (!isset($role_id)) {
     $role_id = '2';
     $user_name = 'Agent';
 }
+
 ?>
 <head>
     <meta charset="utf-8">
@@ -59,6 +60,11 @@ if (!isset($role_id)) {
                     <a class="sidebar-link" href="ticket_manager.php">
                         <i class="align-middle" data-feather="sliders"></i> <span class="align-middle">Ticket
                             Manager</span>
+                    </a>
+                </li>
+                <li class="sidebar-item ">
+                    <a class="sidebar-link" href="returned.php">
+                        <i class="align-middle" data-feather="sliders"></i> <span class="align-middle">Returned Tickets</span>
                     </a>
                 </li>
                  

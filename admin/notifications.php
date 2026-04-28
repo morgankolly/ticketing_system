@@ -33,9 +33,15 @@ if (!empty($notifications)) {
     $pdo->query("UPDATE notifications SET is_read = 1 WHERE is_read = 0");
 }
 
-if (!empty($new_tickets)) {
-    $pdo->query("UPDATE tickets SET is_read = 1 WHERE is_read = 0");
+$link = '#';
+
+if (!empty($notif['related_ticket_ref'])) {
+    $link = "view_tickets.php?ref=" . urlencode($notif['related_ticket_ref']) . "&notif_id=" . $notif['id'];
+} elseif (!empty($notif['related_ticket_id'])) {
+    $link = "view-ticket.php?id=" . (int)$notif['related_ticket_id'] . "&notif_id=" . $notif['id'];
 }
+
+
 ?>
 
 <!DOCTYPE html>
@@ -113,6 +119,22 @@ if (!empty($new_tickets)) {
                             Submitted by: <?= htmlspecialchars($ticket['email']) ?> • 
                             <?= date('M d, Y H:i', strtotime($ticket['created_at'])) ?>
                         </small>
+
+                       
+                                    <?php if (!empty($attachments)): ?>
+                                        <ul>
+                                            <?php foreach ($attachments as $file): ?>
+                                                <li>
+                                                    <a href="/ticketing/ticketing_system/uploads/tickets/<?= htmlspecialchars($file['file_name']) ?>" >
+                                                        <?= htmlspecialchars($file['original_name']) ?>
+                                                    </a>
+                                                </li>
+                                            <?php endforeach; ?>
+                                        </ul>
+                                    <?php else: ?>
+                                        N/A
+                                    <?php endif; ?>
+                               
                     </a>
                 </li>
             <?php endforeach; ?>

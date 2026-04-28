@@ -122,7 +122,7 @@ class TicketModel
         return $commentTree;
     }
 
-   
+
 
 
 
@@ -141,28 +141,32 @@ class TicketModel
 
         return 'TICKET-' . $ref . '-' . $timestamp;
     }
-   
+
 
 
     public function createFullTicket($data, $file = null)
     {
         try {
+
             $this->pdo->beginTransaction();
 
-            // Insert ticket
+            // =========================
+            // ENSURE REQUIRED FIELDS
+            // =========================
+            $data['message_id'] = $data['message_id'] ?? "<ticket-{$data['reference']}@localhost>";
+            $data['close_token'] = $data['close_token'] ?? bin2hex(random_bytes(16));
+
+            // =========================
+            // INSERT TICKET
+            // =========================
             $stmt = $this->pdo->prepare("
-    INSERT INTO tickets 
-    (reference, title, description, email, status, priority, category_id, user_id, contact, support_email, message_id, close_token, created_at)
-    VALUES 
-    (:reference, :title, :description, :email, :status, :priority, :category_id, :user_id, :contact, :support_email, :message_id, :close_token, NOW())
-");
+            INSERT INTO tickets 
+            (reference, title, description, email, status, priority, category_id, user_id, contact, support_email, message_id, close_token, created_at)
+            VALUES 
+            (:reference, :title, :description, :email, :status, :priority, :category_id, :user_id, :contact, :support_email, :message_id, :close_token, NOW())
+        ");
 
-            // Ensure message_id exists
-            if (empty($data['message_id'])) {
-                $data['message_id'] = "<ticket-{$data['reference']}@localhost>";
-            }
-
-            $stmt->execute([
+            $ok = $stmt->execute([
                 ':reference' => $data['reference'],
                 ':title' => $data['title'],
                 ':description' => $data['description'],
@@ -174,42 +178,65 @@ class TicketModel
                 ':contact' => $data['contact'],
                 ':support_email' => $data['support_email'],
                 ':message_id' => $data['message_id'],
-                ':close_token' => $data['close_token'] ?? null
+                ':close_token' => $data['close_token']
             ]);
 
+            if (!$ok) {
+                throw new Exception("Ticket insert failed: " . json_encode($stmt->errorInfo()));
+            }
+
+            // =========================
+            // GET TICKET ID (SAFE)
+            // =========================
             $ticket_id = $this->pdo->lastInsertId();
 
-            // Handle file upload
-            if ($file && !empty($file['name'])) {
+            if (!$ticket_id) {
+                throw new Exception("Failed to retrieve ticket ID (check AUTO_INCREMENT on tickets table)");
+            }
 
-                $uploadDir = __DIR__ . '/../uploads/';
-                if (!is_dir($uploadDir)) {
-                    mkdir($uploadDir, 0755, true);
+            // =========================
+// FILE UPLOAD
+// =========================
+            if ($file && isset($file['error']) && $file['error'] === UPLOAD_ERR_OK) {
+
+                $uploadDir = $_SERVER['DOCUMENT_ROOT'] . "/ticketing/ticketing_system/uploads/tickets/";
+
+                $originalName = basename($file['name']);
+                $newFileName = time() . "_" . uniqid() . "_" . $originalName;
+                $fullPath = $uploadDir . $newFileName;
+
+                if (!file_exists($uploadDir)) {
+                    throw new Exception("Upload folder does not exist.");
                 }
 
-                $fileName = time() . "_" . basename($file['name']);
-                $filePath = $uploadDir . $fileName;
+                if (!is_writable($uploadDir)) {
+                    throw new Exception("Upload folder is not writable.");
+                }
 
-                if (move_uploaded_file($file['tmp_name'], $filePath)) {
-
-                    $fileStmt = $this->pdo->prepare("
-                    INSERT INTO ticket_files 
-                    (ticket_id, file_name, file_path, file_type)
-                    VALUES (:ticket_id, :file_name, :file_path, :file_type)
-                ");
-
-                    $fileStmt->execute([
+                if (move_uploaded_file($file['tmp_name'], $fullPath)) {
+                    // ✅ Save the file record to the database
+                    $attachStmt = $this->pdo->prepare("
+            INSERT INTO ticket_attachments (ticket_id, file_name, original_name, file_size, mime_type, created_at)
+            VALUES (:ticket_id, :file_name, :original_name, :file_size, :mime_type, NOW())
+        ");
+                    $attachStmt->execute([
                         ':ticket_id' => $ticket_id,
-                        ':file_name' => $fileName,
-                        ':file_path' => 'uploads/' . $fileName,
-                        ':file_type' => mime_content_type($filePath)
+                        ':file_name' => $newFileName,
+                        ':original_name' => $originalName,
+                        ':file_size' => $file['size'],
+                        ':mime_type' => $file['type']
                     ]);
+                } else {
+                    throw new Exception("File upload failed.");
                 }
             }
 
+
+            // =========================
+            // COMMIT
+            // =========================
             $this->pdo->commit();
 
-            // Return ticket ID and message_id
             return [
                 'ticket_id' => $ticket_id,
                 'message_id' => $data['message_id'],
@@ -238,11 +265,12 @@ class TicketModel
             ':message' => $message
         ]);
     }
-public function sendCustomerEmail($data, $ticketRef) {
-    
-    $subject = "Ticket Received - #{$ticketRef}";
-    
-    $body = "
+    public function sendCustomerEmail($data, $ticketRef)
+    {
+
+        $subject = "Ticket Received - #{$ticketRef}";
+
+        $body = "
         <html>
         <body>
             <h2>Ticket Submitted Successfully</h2>
@@ -259,73 +287,79 @@ public function sendCustomerEmail($data, $ticketRef) {
         </body>
         </html>
     ";
-    
-    // ✅ Send with Message-ID for threading
-    return sendemail(
-        $data['email'],
-        'Customer',
-        $subject,
-        $body,
-        $data['message_id'], // This is the Message-ID for the first email
-        null                 // No inReplyTo for first email
-    );
-}
-   public function getTicketByReference(?string $ticketRef)
-{
-    if (!$ticketRef) {
-        return null;
+
+        // ✅ Send with Message-ID for threading
+        return sendemail(
+            $data['email'],
+            'Customer',
+            $subject,
+            $body,
+            $data['message_id'], // This is the Message-ID for the first email
+            null                 // No inReplyTo for first email
+        );
+    }
+    public function getTicketByReference(?string $ticketRef)
+    {
+        if (!$ticketRef) {
+            return null;
+        }
+
+        $stmt = $this->pdo->prepare("SELECT * FROM tickets WHERE reference = ?");
+        $stmt->execute([$ticketRef]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    $stmt = $this->pdo->prepare("SELECT * FROM tickets WHERE reference = ?");
-    $stmt->execute([$ticketRef]);
-    return $stmt->fetch(PDO::FETCH_ASSOC);
-}
 
-
-    public function assignTicket($reference, $userId, $priority)
-    {
-        $stmt = $this->pdo->prepare("
+   public function assignTicket($reference, $userId, $priority)
+{
+    $stmt = $this->pdo->prepare("
         UPDATE tickets 
-        SET user_id = :user_id, priority = :priority
+        SET 
+            user_id = :user_id,
+            priority = :priority,
+            status = 'open',
+            returned_by = NULL,
+            return_reason = NULL,
+            returned_at = NULL
         WHERE reference = :reference
     ");
 
-        return $stmt->execute([
-            ':user_id' => $userId,
-            ':priority' => $priority,
-            ':reference' => $reference
-        ]);
-    }
+    return $stmt->execute([
+        ':user_id' => $userId,
+        ':priority' => $priority,
+        ':reference' => $reference
+    ]);
+}
 
-  
+
 
 
 
     public function getTicketCommentsThread(string $ticketRef): array
-{
-    if (empty($ticketRef)) {
-        return [];
-    }
+    {
+        if (empty($ticketRef)) {
+            return [];
+        }
 
-    // Get ticket ID from reference
-    $stmt = $this->pdo->prepare("
+        // Get ticket ID from reference
+        $stmt = $this->pdo->prepare("
         SELECT ticket_id
         FROM tickets
         WHERE reference = :reference
         LIMIT 1
     ");
-    
-    $stmt->execute([':reference' => $ticketRef]);
-    $ticket = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if (!$ticket) {
-        return [];
-    }
+        $stmt->execute([':reference' => $ticketRef]);
+        $ticket = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    $ticketId = (int) $ticket['ticket_id'];
+        if (!$ticket) {
+            return [];
+        }
 
-    // Fetch ticket comments
-    $stmt = $this->pdo->prepare("
+        $ticketId = (int) $ticket['ticket_id'];
+
+        // Fetch ticket comments
+        $stmt = $this->pdo->prepare("
         SELECT 
             tc.*, 
             COALESCE(u.user_name, 'Agent') AS commenter_name
@@ -335,12 +369,12 @@ public function sendCustomerEmail($data, $ticketRef) {
         ORDER BY tc.created_at ASC
     ");
 
-    $stmt->execute([':ticket_id' => $ticketId]);
+        $stmt->execute([':ticket_id' => $ticketId]);
 
-    $comments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $comments = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    return $this->buildCommentTree($comments);
-}
+        return $this->buildCommentTree($comments);
+    }
 
 
     private function buildCommentTree(array $comments, ?int $parentId = null): array
@@ -554,11 +588,11 @@ public function sendCustomerEmail($data, $ticketRef) {
     }
 
 
-public function autoCloseTicketsBySystem()
-{
-    // 1. Close tickets where the LATEST comment is from an agent (agent_id is NOT NULL)
-    // and that comment was created more than 1 minute ago.
-    $updateSql = "
+    public function autoCloseTicketsBySystem()
+    {
+        // 1. Close tickets where the LATEST comment is from an agent (agent_id is NOT NULL)
+        // and that comment was created more than 1 minute ago.
+        $updateSql = "
         UPDATE tickets t
         SET t.status = 'closed', 
             t.closed_at = NOW(), 
@@ -579,12 +613,12 @@ public function autoCloseTicketsBySystem()
                 /* Must be older than 1 minute */
                 AND tc.created_at <= DATE_SUB(NOW(), INTERVAL 1 MINUTE)
           )";
-          
-    $updateStmt = $this->pdo->prepare($updateSql);
-    $updateStmt->execute();
 
-    // 2. Log history only for tickets that don't have an auto-close log yet
-    $logSql = "
+        $updateStmt = $this->pdo->prepare($updateSql);
+        $updateStmt->execute();
+
+        // 2. Log history only for tickets that don't have an auto-close log yet
+        $logSql = "
         INSERT INTO ticket_history (ticket_id, reference, action, created_at)
         SELECT ticket_id, reference, 'auto_closed', NOW()
         FROM tickets
@@ -592,10 +626,10 @@ public function autoCloseTicketsBySystem()
           AND reference NOT IN (
               SELECT reference FROM ticket_history WHERE action = 'auto_closed'
           )";
-          
-    $logStmt = $this->pdo->prepare($logSql);
-    $logStmt->execute();
-}
+
+        $logStmt = $this->pdo->prepare($logSql);
+        $logStmt->execute();
+    }
 
     public function saveCloseToken($ticketRef, $token)
     {
@@ -625,129 +659,133 @@ public function autoCloseTicketsBySystem()
         return $closeLink;
     }
 
-   function sendTicketForReassignment($pdo, $reference)
-{
-    $stmt = $pdo->prepare("
+    function sendTicketForReassignment($pdo, $reference)
+    {
+        $stmt = $pdo->prepare("
         UPDATE tickets
         SET user_id = NULL,
             status = 'open'
         WHERE reference = ?
     ");
 
-    
-    return $stmt->execute([$reference]);
-}
-    
-public function markTicketAsRead(int $ticketId): bool
-{
-    $stmt = $this->pdo->prepare("
+
+        return $stmt->execute([$reference]);
+    }
+
+    public function markTicketAsRead(int $ticketId): bool
+    {
+        $stmt = $this->pdo->prepare("
         UPDATE tickets 
         SET is_read = 1 
         WHERE ticket_id = :ticket_id
     ");
 
-    return $stmt->execute([
-        'ticket_id' => $ticketId
-    ]);
-}
-
-
-public function updateStatus(int $ticketId, string $newStatus): bool
-{
-    if ($ticketId <= 0 || empty($newStatus)) {
-        return false;
+        return $stmt->execute([
+            'ticket_id' => $ticketId
+        ]);
     }
 
-    $stmt = $this->pdo->prepare("
+
+    public function updateStatus(int $ticketId, string $newStatus): bool
+    {
+        if ($ticketId <= 0 || empty($newStatus)) {
+            return false;
+        }
+
+        $stmt = $this->pdo->prepare("
         UPDATE tickets
            SET status = :status,
                updated_at = NOW()
          WHERE id = :id
     ");
 
-    try {
-        $success = $stmt->execute([
-            'status' => $newStatus,
-            'id'     => $ticketId,
-        ]);
-        return $success;
-    } catch (PDOException $e) {
-        error_log("updateStatus failed: " . $e->getMessage());
-        return false;
-    }
-}
-
-/**
- * Update ticket priority
- *
- * @param int    $ticketId
- * @param string $newPriority
- * @return bool
- */
-public function updatePriority(string $reference, string $newPriority): bool
-{
-    if (empty($reference) || empty($newPriority)) {
-        return false;
+        try {
+            $success = $stmt->execute([
+                'status' => $newStatus,
+                'id' => $ticketId,
+            ]);
+            return $success;
+        } catch (PDOException $e) {
+            error_log("updateStatus failed: " . $e->getMessage());
+            return false;
+        }
     }
 
-    $stmt = $this->pdo->prepare("
+
+    public function updatePriority(string $reference, string $newPriority): bool
+    {
+        if (empty($reference) || empty($newPriority)) {
+            return false;
+        }
+
+        $stmt = $this->pdo->prepare("
         UPDATE tickets
            SET priority    = :priority,
                updated_at  = NOW()
          WHERE reference   = :reference
     ");
 
-    try {
-        $stmt->execute([
-            ':priority'   => $newPriority,
-            ':reference'  => $reference,
-        ]);
+        try {
+            $stmt->execute([
+                ':priority' => $newPriority,
+                ':reference' => $reference,
+            ]);
 
-        // Only consider it successful if exactly one row was updated
-        return $stmt->rowCount() === 1;
-    } catch (PDOException $e) {
-        error_log("updatePriority failed for reference {$reference}: " . $e->getMessage());
-        return false;
+            // Only consider it successful if exactly one row was updated
+            return $stmt->rowCount() === 1;
+        } catch (PDOException $e) {
+            error_log("updatePriority failed for reference {$reference}: " . $e->getMessage());
+            return false;
+        }
     }
-}
-public function findTicket(string $reference): ?array
-{
-    // Remove extra spaces
-    $reference = trim($reference);
+    public function findTicket(string $reference): ?array
+    {
+        // Remove extra spaces
+        $reference = trim($reference);
 
-    // Stop if reference is empty
-    if ($reference === '') {
-        return null;
-    }
+        // Stop if reference is empty
+        if ($reference === '') {
+            return null;
+        }
 
-    $stmt = $this->pdo->prepare("
+        $stmt = $this->pdo->prepare("
         SELECT *
         FROM tickets
         WHERE reference = :reference
         LIMIT 1
     ");
 
-    $stmt->execute([
-        ':reference' => $reference
-    ]);
+        $stmt->execute([
+            ':reference' => $reference
+        ]);
 
-    $ticket = $stmt->fetch(PDO::FETCH_ASSOC);
+        $ticket = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    return $ticket ?: null;
-}
+        return $ticket ?: null;
+    }
 
-public function getUnreadCommentsCount($ticketId) {
-    $stmt = $this->pdo->prepare("
+    public function getUnreadCommentsCount($ticketId)
+    {
+        $stmt = $this->pdo->prepare("
         SELECT COUNT(*) 
         FROM ticket_comments
         WHERE ticket_id = :ticket_id
         AND is_read = 0
     ");
-    $stmt->execute(['ticket_id' => $ticketId]);
-    return $stmt->fetchColumn();
-}
+        $stmt->execute(['ticket_id' => $ticketId]);
+        return $stmt->fetchColumn();
+    }
 
 
+    public function getTicketFiles($ticket_id)
+    {
+        $stmt = $this->pdo->prepare("
+        SELECT * FROM ticket_files WHERE ticket_id = ?
+    ");
+        $stmt->execute([$ticket_id]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }
 
 

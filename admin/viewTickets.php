@@ -21,6 +21,14 @@ if (!empty($viewRef)) {
     $ticket = $ticketModel->getTicketByReference($viewRef); // <-- YOU NEED THIS
     $ticketModel->markAsInProgress($viewRef);
 }
+$stmt = $pdo->prepare("
+    SELECT file_name, original_name 
+    FROM ticket_attachments 
+    WHERE ticket_id = :ticket_id
+");
+$stmt->execute(['ticket_id' => $ticket['ticket_id']]);
+$attachments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 
 ?>
 
@@ -96,6 +104,25 @@ if (!empty($viewRef)) {
                                 <th>Email:</th>
                                 <td><?= htmlspecialchars($ticket['email'] ?? 'N/A') ?></td>
                             </tr>
+                            <tr>
+                                <th>File:</th>
+                                <td>
+                                    <?php if (!empty($attachments)): ?>
+                                        <ul>
+                                            <?php foreach ($attachments as $file): ?>
+                                                <li>
+                                                    <a
+                                                        href="/ticketing/ticketing_system/uploads/tickets/<?= htmlspecialchars($file['file_name']) ?>">
+                                                        <?= htmlspecialchars($file['original_name']) ?>
+                                                    </a>
+                                                </li>
+                                            <?php endforeach; ?>
+                                        </ul>
+                                    <?php else: ?>
+                                        N/A
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
                         </table>
                     </div>
                 </div>
@@ -107,20 +134,32 @@ if (!empty($viewRef)) {
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="row mt-4">
                     <div class="col-12">
                         <a href="ticketComments.php?ticket_ref=<?= urlencode($ticket['reference'] ?? '') ?>"
                             class="btn btn-primary btn-lg">
                             <i class="align-middle" data-feather="message-square"></i> View & Reply Comments
                         </a>
-             <?php if (($ticket['status'] ?? null) !== 'reassign_requested'): ?>
-<form method="POST">
-    <input type="hidden" name="reference" value="<?= $ticket['reference'] ?>">
-    <button type="submit" class="btn btn-warning">
-        Send Back For Reassignment
-    </button>
-</form>
+                        <?php if (($ticket['status'] ?? null) !== 'reassign_requested'): ?>
+                            <form method="POST" class="mt-3">
+                                <input type="hidden" name="reference" value="<?= $ticket['reference'] ?>">
+
+                                <div class="mb-2">
+                                    <textarea name="reason" class="form-control"
+                                        placeholder="Enter reason for reassignment..." required></textarea>
+                                </div>
+
+                                <button type="submit" name="return_ticket" class="btn btn-warning">
+                                    Send Back For Reassignment
+                                </button>
+                            </form>
+                        <?php endif; ?>
+                        <?php if (!empty($ticket['return_reason'])): ?>
+    <div class="alert alert-warning mt-3">
+        <strong>Reassignment Reason:</strong><br>
+        <?= nl2br(htmlspecialchars($ticket['return_reason'])) ?>
+    </div>
 <?php endif; ?>
                     </div>
                 </div>
