@@ -391,9 +391,7 @@ select:disabled {
 [type="button"],
 [type="reset"],
 [type="submit"],
-button {
-  -webkit-appearance: button;
-}
+
 [type="button"]:not(:disabled),
 [type="reset"]:not(:disabled),
 [type="submit"]:not(:disabled),
@@ -436,10 +434,8 @@ legend + * {
 ::-webkit-inner-spin-button {
   height: auto;
 }
-[type="search"] {
-  -webkit-appearance: textfield;
-  outline-offset: -2px;
-}
+
+
 ::-webkit-search-decoration {
   -webkit-appearance: none;
 }
@@ -450,10 +446,7 @@ legend + * {
   -webkit-appearance: button;
   font: inherit;
 }
-::file-selector-button {
-  -webkit-appearance: button;
-  font: inherit;
-}
+
 output {
   display: inline-block;
 }
@@ -2254,7 +2247,6 @@ textarea.form-control-lg {
 }
 .form-check-input {
   --bs-form-check-bg: #fff;
-  color-adjust: exact;
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
